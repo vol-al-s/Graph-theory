@@ -1,10 +1,10 @@
 #include "../header/graph.h"
-#include "distribution.h"
+#include "../header/distribution.h"
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
 
-Graph::Graph(int n) : n(n) {
+Graph::Graph(int n, bool is_directed) : n(n), is_directed(is_directed) {
     adj.assign(n, std::vector<int>(n, 0));
 }
 
@@ -30,15 +30,18 @@ Matrix matrix_add(const Matrix& A, const Matrix& B) {
 }
 
 bool Graph::is_connected() {
-    // Для связности графа строим матрицу смежности неориентированного эквивалента
+    // Для проверки слабой связности ориентированного графа делаем его временно неориентированным
     Matrix P = adj;
-    for (int i = 0; i < n; ++i)
-        for (int j = 0; j < n; ++j)
-            if (adj[i][j]) { P[i][j] = 1; P[j][i] = 1; }
+    if (is_directed) {
+        for (int i = 0; i < n; ++i)
+            for (int j = 0; j < n; ++j)
+                if (adj[i][j]) { P[i][j] = 1; P[j][i] = 1; }
+    }
             
     Matrix sumP = P;
     Matrix currentP = P;
-    // Сложение всех степеней матрицы от 1 до n-1
+    
+    // Сложение всех степеней матрицы от 1 до n-1 по теореме Шимбелла
     for (int k = 2; k <= n - 1; ++k) {
         currentP = matrix_multiply(currentP, P);
         sumP = matrix_add(sumP, currentP);
@@ -53,25 +56,56 @@ bool Graph::is_connected() {
 }
 
 void Graph::generate_acyclic_connected(int r, double p) {
-    while (true) {
+    if (is_directed) {
+        // Генерация ориентированного ациклического графа (DAG)
+        while (true) {
+            for (int i = 0; i < n; ++i) std::fill(adj[i].begin(), adj[i].end(), 0);
+            
+            for (int i = 0; i < n - 1; ++i) {
+                // Степень исхода вершины по распределению Паскаля
+                int deg = generate_pascal(r, p) + 1; 
+                if (deg > n - 1 - i) deg = n - 1 - i;
+                
+                std::vector<int> targets;
+                for (int j = i + 1; j < n; ++j) targets.push_back(j);
+                std::random_shuffle(targets.begin(), targets.end());
+                
+                for (int k = 0; k < deg; ++k) {
+                    adj[i][targets[k]] = 1; // Строго верхняя треугольная матрица
+                }
+            }
+            if (is_connected()) break; // Проверка связности
+        }
+    } else {
+        // Генерация неориентированного графа (дерева) ПО РАСПРЕДЕЛЕНИЮ ПАСКАЛЯ
         for (int i = 0; i < n; ++i) std::fill(adj[i].begin(), adj[i].end(), 0);
         
-        for (int i = 0; i < n - 1; ++i) {
-            // Генерация по степеням вершин:
+        int current_n = 1;  // У нас уже есть 1 вершина (индекс 0)
+        int parent_idx = 0; // Вершина, к которой мы сейчас привязываем соседей
+        
+        while (current_n < n) {
+            // Генерируем степень ветвления (количество "детей") по Паскалю
             int deg = generate_pascal(r, p) + 1; 
-            if (deg > n - 1 - i) deg = n - 1 - i;
             
-            std::vector<int> targets;
-            for (int j = i + 1; j < n; ++j) targets.push_back(j);
-            std::random_shuffle(targets.begin(), targets.end());
-            
-            for (int k = 0; k < deg; ++k) {
-                adj[i][targets[k]] = 1; // Треугольная матрица гарантирует ацикличность
+            // Ограничиваем, чтобы не превысить заданное число вершин n
+            if (current_n + deg > n) {
+                deg = n - current_n;
             }
+            
+            // Привязываем deg новых вершин к текущей parent_idx
+            for (int i = 0; i < deg; ++i) {
+                int child_idx = current_n;
+                adj[parent_idx][child_idx] = 1;
+                adj[child_idx][parent_idx] = 1; // Делаем связь двусторонней (неориентированной)
+                current_n++;
+            }
+            // Переходим к следующей вершине для ветвления
+            parent_idx++;
         }
-        if (is_connected()) break; // Проверка связности по теореме Шимбелла
+        // Дерево, построенное таким "вширь" способом, 100% связно и не имеет циклов
     }
 }
+
 
 void Graph::print() {
     for (int i = 0; i < n; ++i) {
@@ -84,10 +118,15 @@ void Graph::calculate_eccentricities() {
     Matrix dist(n, std::vector<int>(n, INF));
     for (int i = 0; i < n; ++i) dist[i][i] = 0;
     
-    for (int i = 0; i < n; ++i)
-        for (int j = 0; j < n; ++j)
-            if (adj[i][j]) { dist[i][j] = 1; dist[j][i] = 1; }
+    // Заполняем начальные расстояния
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            // Для эксцентриситета в орграфе считаем расстояние по направлению ребер
+            if (adj[i][j]) dist[i][j] = 1; 
+        }
+    }
             
+    // Алгоритм Флойда-Уоршелла для поиска кратчайших путей
     for (int k = 0; k < n; ++k)
         for (int i = 0; i < n; ++i)
             for (int j = 0; j < n; ++j)
@@ -97,8 +136,15 @@ void Graph::calculate_eccentricities() {
     std::vector<int> ecc(n, 0);
     int min_ecc = INF, max_ecc = 0;
     
+    // Для графа, где не из каждой вершины можно достичь остальных (орграф), 
+    // эксцентриситет может быть бесконечностью. Учитываем только достижимые.
     for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) if (dist[i][j] != INF) ecc[i] = std::max(ecc[i], dist[i][j]);
+        for (int j = 0; j < n; ++j) {
+            if (dist[i][j] != INF) {
+                ecc[i] = std::max(ecc[i], dist[i][j]);
+            }
+        }
+        // Если вершина ни с чем не связана исходящими ребрами (сток), ее эксцентриситет = 0
         min_ecc = std::min(min_ecc, ecc[i]);
         max_ecc = std::max(max_ecc, ecc[i]);
     }
@@ -106,26 +152,36 @@ void Graph::calculate_eccentricities() {
     std::cout << "Эксцентриситеты:\n";
     for (int i = 0; i < n; ++i) std::cout << "v" << i+1 << ": " << ecc[i] << "\n";
     
-    std::cout << "Центр графа (вершины): ";
+    std::cout << "Центр графа (вершины с мин. эксцентриситетом): ";
     for (int i = 0; i < n; ++i) if (ecc[i] == min_ecc) std::cout << i+1 << " ";
     
-    std::cout << "\nДиаметральные вершины (пары): ";
-    for (int i = 0; i < n; ++i)
-        for (int j = i + 1; j < n; ++j)
-            if (dist[i][j] == max_ecc) std::cout << "(" << i+1 << ", " << j+1 << ") ";
+    std::cout << "\nДиаметральные вершины (пары с макс. расстоянием): ";
+    bool found_diam = false;
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (i != j && dist[i][j] == max_ecc && max_ecc > 0) {
+                std::cout << "(" << i+1 << " -> " << j+1 << ") ";
+                found_diam = true;
+            }
+        }
+    }
+    if (!found_diam) std::cout << "Нет подходящих пар.";
     std::cout << "\n";
 }
 
 void Graph::count_paths(int u, int v) {
-    u--; v--; // 0-индексация
+    u--; v--; // Переход к 0-индексации
     Matrix sumP = adj;
     Matrix currentP = adj;
+    
+    // По методу Шимбелла: P + P^2 + ... + P^(n-1)
     for (int k = 2; k <= n - 1; ++k) {
         currentP = matrix_multiply(currentP, adj);
         sumP = matrix_add(sumP, currentP);
     }
+    
     int routes = sumP[u][v];
-    if (routes > 0) std::cout << "Маршрут возможен. Количество: " << routes << "\n";
+    if (routes > 0) std::cout << "Маршрут возможен. Количество маршрутов: " << routes << "\n";
     else std::cout << "Построение маршрута невозможно.\n";
 }
 

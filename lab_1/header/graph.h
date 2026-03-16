@@ -9,9 +9,10 @@ const int INF = 1e9;
 class Graph {
 public:
     int n;
+    bool is_directed;
     Matrix adj;
 
-    Graph(int n);
+    Graph(int n, bool is_directed);
     void generate_acyclic_connected(int r, double p);
     void print();
     

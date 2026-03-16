@@ -15,19 +15,17 @@ void print_menu() {
     cout << "Ваш выбор: ";
 }
 
-// Вспомогательная функция для безопасного ввода целых чисел
 int get_valid_input(const string& prompt) {
     int value;
     while (true) {
         cout << prompt;
         if (cin >> value) {
-            // Очищаем буфер от возможных лишних символов (например, если ввели "1abc")
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             return value;
         } else {
             cout << "Ошибка: введено некорректное значение. Пожалуйста, введите целое число.\n";
-            cin.clear(); // Сбрасываем флаг ошибки потока
-            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Очищаем буфер
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
         }
     }
 }
@@ -37,14 +35,12 @@ int main() {
     int choice;
     Graph* g = nullptr;
     
-    // Параметры распределения Паскаля 
     int r = 3;      
     double p = 0.5;
 
     while (true) {
         print_menu();
         
-        // Чтение выбора пользователя с защитой от ввода символов
         if (!(cin >> choice)) {
             cout << "Ошибка: введите число от 0 до 4.\n";
             cin.clear();
@@ -55,18 +51,30 @@ int main() {
         if (choice == 0) break;
         
         if (choice == 1) {
-            int n;
+            int n, graph_type;
             while (true) {
                 n = get_valid_input("Введите количество вершин графа (n > 1): ");
                 if (n > 1) break;
                 cout << "Граф должен содержать как минимум 2 вершины.\n";
             }
             
+            while (true) {
+                graph_type = get_valid_input("Тип графа (1 - Ориентированный, 2 - Неориентированный): ");
+                if (graph_type == 1 || graph_type == 2) break;
+                cout << "Пожалуйста, введите 1 или 2.\n";
+            }
+            
+            bool is_directed = (graph_type == 1);
+            
             if (g) delete g;
-            g = new Graph(n);
+            g = new Graph(n, is_directed);
             g->generate_acyclic_connected(r, p);
             
-            cout << "Сгенерированная матрица смежности:\n";
+            if (is_directed) {
+                cout << "\nСгенерирована матрица смежности (Ориентированный ациклический граф):\n";
+            } else {
+                cout << "\nСгенерирована матрица смежности (Неориентированное дерево):\n";
+            }
             g->print();
         } 
         else if (choice == 2) {
@@ -81,7 +89,7 @@ int main() {
                 cout << "Матрица должна содержать как минимум 2 вершины.\n";
             }
             
-            int max_edges = n * (n - 1) / 2; // Максимально возможное кол-во ребер
+            int max_edges = n * (n - 1); 
             while (true) {
                 edges = get_valid_input("Введите количество ребер: ");
                 if (edges >= 1 && edges <= max_edges) break;
