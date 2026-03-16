@@ -1,64 +1,41 @@
-# Makefile для лабораторной работы по теории графов
-
-# Компилятор
+# Компилятор и флаги
 CXX = g++
-
-# Флаги компиляции
-CXXFLAGS = -std=c++17 -Wall -Wextra -O2
-DEBUG_FLAGS = -g -DDEBUG
+# Флаг -Iheader указывает компилятору искать заголовочные файлы в папке header
+CXXFLAGS = -Wall -Wextra -std=c++11 -Iheader
 
 # Директории
 SRC_DIR = src
-HDR_DIR = header
 OBJ_DIR = obj
 BIN_DIR = bin
+HEADER_DIR = header
 
-# Исходные файлы (исправлена опечатка: raph.cpp -> graph.cpp)
-SOURCES = $(SRC_DIR)/main.cpp $(SRC_DIR)/graph.cpp $(SRC_DIR)/random_generator.cpp $(SRC_DIR)/algorithms.cpp
-HEADERS = $(HDR_DIR)/graph.h $(HDR_DIR)/random_generator.h $(HDR_DIR)/algorithms.h
+# Исходные и объектные файлы
+SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/graph.cpp $(SRC_DIR)/distribution.cpp
+OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
-# Объектные файлы (будут в obj/, а не в obj/src/)
-OBJECTS = $(OBJ_DIR)/main.o $(OBJ_DIR)/graph.o $(OBJ_DIR)/random_generator.o $(OBJ_DIR)/algorithms.o
+# Исполняемый файл
+EXEC = $(BIN_DIR)/lab1
 
-# Имя исполняемого файла
-TARGET = $(BIN_DIR)/graph_lab
+# Цель по умолчанию
+all: directories $(EXEC)
 
-# Правила
-.PHONY: all clean debug run
-
-all: directories $(TARGET)
-
+# Создание папок obj и bin, если их еще нет
 directories:
-	@mkdir -p $(OBJ_DIR)
-	@mkdir -p $(BIN_DIR)
+	@mkdir -p $(OBJ_DIR) $(BIN_DIR)
 
-$(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+# Линковка (сборка финального файла в папке bin)
+$(EXEC): $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
 
-# Правило для компиляции (добавлен -I для поиска заголовков)
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | directories
-	$(CXX) $(CXXFLAGS) -I$(HDR_DIR) -c -o $@ $<
+# Компиляция .cpp файлов из src/ в .o файлы в папке obj/
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-debug: CXXFLAGS += $(DEBUG_FLAGS)
-debug: clean all
-
+# === БЫСТРЫЙ ЗАПУСК ===
+# Команда "make run" сначала проверит изменения (вызовет all), а затем запустит программу
 run: all
-	./$(TARGET)
+	./$(EXEC)
 
+# Очистка сгенерированных файлов
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
-
-# Зависимости (исправлены пути к заголовкам)
-$(OBJ_DIR)/main.o: $(SRC_DIR)/main.cpp $(HEADERS)
-$(OBJ_DIR)/graph.o: $(SRC_DIR)/graph.cpp $(HDR_DIR)/graph.h
-$(OBJ_DIR)/random_generator.o: $(SRC_DIR)/random_generator.cpp $(HDR_DIR)/random_generator.h
-$(OBJ_DIR)/algorithms.o: $(SRC_DIR)/algorithms.cpp $(HDR_DIR)/algorithms.h $(HDR_DIR)/graph.h
-
-# Помощь
-help:
-	@echo "Доступные цели:"
-	@echo "  all     - Сборка проекта (по умолчанию)"
-	@echo "  debug   - Сборка с отладочной информацией"
-	@echo "  run     - Сборка и запуск программы"
-	@echo "  clean   - Очистка скомпилированных файлов"
-	@echo "  help    - Показать эту справку"
+	rm -rf $(OBJ_DIR)/* $(BIN_DIR)/*

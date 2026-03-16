@@ -2,48 +2,43 @@
 #define GRAPH_H
 
 #include <vector>
-#include <string>
-#include <limits>
+
+using Matrix = std::vector<std::vector<int>>;
+const int INF = 1e9;
 
 class Graph {
 public:
-    Graph(int vertices = 0);
-    ~Graph();
+    int n;
+    Matrix adj;
+
+    Graph(int n);
+    void generate_acyclic_connected(int r, double p);
+    void print();
     
-    // Основные операции
-    void addVertex();
-    void addEdge(int u, int v, int weight = 1);
-    void removeEdge(int u, int v);
-    bool hasEdge(int u, int v) const;
+    // Проверка связности (Следствие 1 из презентации)
+    bool is_connected();
     
-    // Получение информации
-    int getVertexCount() const;
-    int getEdgeCount() const;
-    std::vector<int> getAdjacencyList(int vertex) const;
-    int getWeight(int u, int v) const;
+    // Подсчет эксцентриситетов, центров и диаметра
+    void calculate_eccentricities();
     
-    // Представления графа
-    std::vector<std::vector<int>> getAdjacencyMatrix() const;
-    std::vector<std::vector<int>> getWeightMatrix() const;
-    
-    // Проверки
-    bool isConnected() const;
-    bool isAcyclic() const;
-    bool isTree() const;
-    
-    // Очистка
-    void clear();
-    void resetWeights();
-    
-private:
-    int vertices;
-    int edges;
-    std::vector<std::vector<int>> adjacencyList;
-    std::vector<std::vector<int>> weightMatrix;
-    
-    // Вспомогательные методы
-    bool hasCycleDFS(int v, int parent, std::vector<bool>& visited) const;
-    void dfs(int v, std::vector<bool>& visited) const;
+    // Подсчет маршрутов методом Шимбелла
+    void count_paths(int u, int v);
 };
 
-#endif // GRAPH_H
+class Shimbell {
+public:
+    int n;
+    Matrix W;
+
+    Shimbell(int n);
+    void generate_weights(int edges, int r, double p, int mode);
+    void print_matrix(const Matrix& m);
+    void find_shortest_paths();
+    void find_longest_paths();
+};
+
+// Вспомогательные матричные операции
+Matrix matrix_multiply(const Matrix& A, const Matrix& B);
+Matrix matrix_add(const Matrix& A, const Matrix& B);
+
+#endif
