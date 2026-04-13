@@ -281,7 +281,7 @@ std::vector<int> Graph::findCenterUndirected() const {
 
     for (int v = 0; v < vertexCount; v++) {
         if (eccentricities[v] == radius) {
-            center.push_back(v);
+            center.push_back(v+1);
         }
     }
 
@@ -298,7 +298,7 @@ std::vector<int> Graph::findDiametralVerticesUndirected() const {
 
     for (int v = 0; v < vertexCount; v++) {
         if (eccentricities[v] == diameter) {
-            diametralVertices.push_back(v);
+            diametralVertices.push_back(v+1);
         }
     }
 
@@ -395,10 +395,10 @@ void Graph::printWeightMatrix() const {
     std::cout << "\n";
 
     for (int i = 0; i < vertexCount; i++) {
-        std::cout << std::setw(3) << i+1 << " ";
+        std::cout << std::setw(3) << "v" << i+1 << " ";
         for (int j = 0; j < vertexCount; j++) {
             if (weightMatrix.at(i, j) == INF) {
-                std::cout << std::setw(6) << "INF";
+                std::cout << std::setw(6) << ".";
             } else {
                 std::cout << std::setw(6) << weightMatrix.at(i, j);
             }
@@ -508,11 +508,11 @@ Matrix Graph::shimbellMax(int edgesCount) const {
 }
 
 void Graph::printShimbellResult(int edgesCount, bool findMin, bool findMax) const {
-    if (findMin) {
+    if (edgesCount == 0) {
         Matrix minMatrix = shimbellMin(edgesCount);
 
         std::cout << "\nМатрица минимальных путей методом Шимбелла"
-                  << " для длины " << edgesCount << " рёбер:\n\n    ";
+                << " для длины " << edgesCount << " рёбер:\n\n    ";
 
         for (int j = 0; j < vertexCount; j++) {
             std::cout << std::setw(6) << j+1;
@@ -522,39 +522,65 @@ void Graph::printShimbellResult(int edgesCount, bool findMin, bool findMax) cons
         for (int i = 0; i < vertexCount; i++) {
             std::cout << std::setw(3) << i+1 << " ";
             for (int j = 0; j < vertexCount; j++) {
-                if (minMatrix.at(i, j) == INF) {
-                    std::cout << std::setw(6) << "INF";
+                if (i != j) {
+                    std::cout << std::setw(6) << ".";
                 } else {
-                    std::cout << std::setw(6) << minMatrix.at(i, j);
+                    std::cout << std::setw(6) << 1;
                 }
             }
             std::cout << "\n";
         }
     }
+    if (edgesCount > 0) {
+        if (findMin) {
+            Matrix minMatrix = shimbellMin(edgesCount);
 
-    if (findMax) {
-        Matrix maxMatrix = shimbellMax(edgesCount);
+            std::cout << "\nМатрица минимальных путей методом Шимбелла"
+                    << " для длины " << edgesCount << " рёбер:\n\n    ";
 
-        std::cout << "\nМатрица максимальных путей методом Шимбелла"
-                  << " для длины " << edgesCount << " рёбер:\n\n    ";
-
-        for (int j = 0; j < vertexCount; j++) {
-            std::cout << std::setw(6) << j+1;
-        }
-        std::cout << "\n";
-
-        for (int i = 0; i < vertexCount; i++) {
-            std::cout << std::setw(3) << i+1 << " ";
             for (int j = 0; j < vertexCount; j++) {
-                if (maxMatrix.at(i, j) == INF) {
-                    std::cout << std::setw(6) << "INF";
-                } else {
-                    std::cout << std::setw(6) << maxMatrix.at(i, j);
-                }
+                std::cout << std::setw(6) << j+1;
             }
             std::cout << "\n";
+
+            for (int i = 0; i < vertexCount; i++) {
+                std::cout << std::setw(3) << i+1 << " ";
+                for (int j = 0; j < vertexCount; j++) {
+                    if (minMatrix.at(i, j) == INF) {
+                        std::cout << std::setw(6) << ".";
+                    } else {
+                        std::cout << std::setw(6) << minMatrix.at(i, j);
+                    }
+                }
+                std::cout << "\n";
+            }
+        }
+
+        if (findMax) {
+            Matrix maxMatrix = shimbellMax(edgesCount);
+
+            std::cout << "\nМатрица максимальных путей методом Шимбелла"
+                    << " для длины " << edgesCount << " рёбер:\n\n    ";
+
+            for (int j = 0; j < vertexCount; j++) {
+                std::cout << std::setw(6) << j+1;
+            }
+            std::cout << "\n";
+
+            for (int i = 0; i < vertexCount; i++) {
+                std::cout << std::setw(3) << i+1 << " ";
+                for (int j = 0; j < vertexCount; j++) {
+                    if (maxMatrix.at(i, j) == INF) {
+                        std::cout << std::setw(6) << ".";
+                    } else {
+                        std::cout << std::setw(6) << maxMatrix.at(i, j);
+                    }
+                }
+                std::cout << "\n";
+            }
         }
     }
+
 }
 
 
@@ -566,7 +592,7 @@ void Graph::printShimbellResult(int edgesCount, bool findMin, bool findMax) cons
 
 
 
-
+//находим пути
 bool Graph::routeExistsOriented(int start, int finish) const {
     // Проверка корректности номеров вершин
     if (start < 0 || start >= vertexCount || finish < 0 || finish >= vertexCount) {
@@ -600,6 +626,7 @@ bool Graph::routeExistsOriented(int start, int finish) const {
     return dfs(start);
 }
 
+//считаем пути
 long long Graph::countRoutesOriented(int start, int finish) const {
     // Проверка корректности номеров вершин
     if (start < 0 || start >= vertexCount || finish < 0 || finish >= vertexCount) {

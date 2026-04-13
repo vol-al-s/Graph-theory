@@ -13,6 +13,7 @@ void mainMenu() {
     cout << "3. Показать текущий граф\n";
     cout << "4. Посчитать эксцентриситеты, центр и диаметральные вершины\n";
     cout << "5. Выполнить метод Шимбелла\n";
+    cout << "6. Проверить существование маршрута и количество маршрутов\n";
     cout << "0. Выход\n";
     cout << "Ваш выбор: ";
 }
@@ -112,7 +113,7 @@ void runShimbell(Graph& graph, const PascalDistribution& distribution) {
     cout << "Введите количество рёбер в пути: ";
     cin >> edgesCount;
 
-    if (edgesCount <= 0) {
+    if (edgesCount < 0) {
         cout << "Количество рёбер должно быть положительным.\n";
         return;
     }
@@ -145,6 +146,22 @@ void runShimbell(Graph& graph, const PascalDistribution& distribution) {
     graph.printWeightMatrix();
 
     graph.printShimbellResult(edgesCount, findMin, findMax);
+}
+
+void runRoutes(Graph& graph) {
+    if (graph.getVertexCount() == 0) {
+        cout << "Сначала необходимо сгенерировать граф.\n";
+        return;
+    }
+
+    int start, finish;
+
+    cout << "Введите начальную вершину: ";
+    cin >> start;
+    cout << "Введите конечную вершину: ";
+    cin >> finish;
+
+    graph.printRouteInfoOriented(start, finish);
 }
 
 int main() {
@@ -185,6 +202,9 @@ int main() {
         }
         else if (choice == 5) {
             runShimbell(graph, distribution);
+        }
+        else if (choice == 6) {
+            runRoutes(graph);
         }
         else if (choice == 0) {
             cout << "Выход из программы.\n";
