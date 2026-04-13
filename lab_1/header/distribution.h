@@ -1,12 +1,21 @@
 #ifndef DISTRIBUTION_H
 #define DISTRIBUTION_H
 
-// Генерация случайного числа по распределению Паскаля (отрицательное биномиальное)
-// r - необходимое количество успехов, p - вероятность успеха
-int generate_pascal(int r, double p);
+class PascalDistribution {
+private:
+    int r; // число успехов
+    double p; // вероятность
 
-// Генерация веса ребра с учетом распределения Паскаля и выбранного знака
-// mode: 0 - только положительные, 1 - только отрицательные, 2 - смешанные
-int generate_weight(int r, double p, int mode);
+public:
+    PascalDistribution(int r = 3, double p = 0.5);
+
+    void setR(int r);
+    void setP(double p);
+
+    int getR() const;
+    double getP() const;
+
+    int generate() const;
+};
 
 #endif

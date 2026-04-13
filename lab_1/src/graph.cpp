@@ -1,254 +1,660 @@
 #include "../header/graph.h"
-#include "../header/distribution.h"
 #include <iostream>
+#include <queue>
+#include <limits>
+#include <cstdlib>
 #include <iomanip>
-#include <algorithm>
+#include <functional>
 
-Graph::Graph(int n, bool is_directed) : n(n), is_directed(is_directed) {
-    adj.assign(n, std::vector<int>(n, 0));
+const int INF = 1000000000;
+
+Matrix::Matrix() {}
+
+Matrix::Matrix(int size) {
+    resize(size);
 }
 
-// Умножение матриц
-Matrix matrix_multiply(const Matrix& A, const Matrix& B) {
-    int n = A.size();
-    Matrix C(n, std::vector<int>(n, 0));
-    for(int i = 0; i < n; ++i)
-        for(int k = 0; k < n; ++k)
-            for(int j = 0; j < n; ++j)
-                C[i][j] += A[i][k] * B[k][j];
-    return C;
+void Matrix::resize(int size) { // делает матрицу указанного размера с нулями
+    data.assign(size, std::vector<int>(size, 0));
 }
 
-// Сложение матриц
-Matrix matrix_add(const Matrix& A, const Matrix& B) {
-    int n = A.size();
-    Matrix C(n, std::vector<int>(n, 0));
-    for(int i = 0; i < n; ++i)
-        for(int j = 0; j < n; ++j)
-            C[i][j] = A[i][j] + B[i][j];
-    return C;
+int Matrix::size() const { // возвращает число вершин
+    return (int)data.size();
 }
 
-bool Graph::is_connected() {
-    // Для проверки слабой связности ориентированного графа делаем его временно неориентированным
-    Matrix P = adj;
-    if (is_directed) {
-        for (int i = 0; i < n; ++i)
-            for (int j = 0; j < n; ++j)
-                if (adj[i][j]) { P[i][j] = 1; P[j][i] = 1; }
-    }
-            
-    Matrix sumP = P;
-    Matrix currentP = P;
-    
-    // Сложение всех степеней матрицы от 1 до n-1 по теореме Шимбелла
-    for (int k = 2; k <= n - 1; ++k) {
-        currentP = matrix_multiply(currentP, P);
-        sumP = matrix_add(sumP, currentP);
-    }
-    
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            if (i != j && sumP[i][j] == 0) return false;
+int& Matrix::at(int i, int j) { // изменяем значение
+    return data[i][j];
+}
+
+int Matrix::at(int i, int j) const { // читаем значение
+    return data[i][j];
+}
+
+const std::vector<std::vector<int>>& Matrix::getData() const { // возвращаем матрицу целиком
+    return data;
+}
+
+void Matrix::print(const std::string& title) const { // Выводим значение матрицы
+    int n = size();
+
+    std::cout << "\n" << title << "\n\n";
+    std::cout << "\n";
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            std::cout << std::setw(3) << data[i][j];
         }
-    }
-    return true;
-}
-
-void Graph::generate_acyclic_connected(int r, double p) {
-    if (is_directed) {
-        // Генерация ориентированного ациклического графа (DAG)
-        while (true) {
-            for (int i = 0; i < n; ++i) std::fill(adj[i].begin(), adj[i].end(), 0);
-            
-            for (int i = 0; i < n - 1; ++i) {
-                // Степень исхода вершины по распределению Паскаля
-                int deg = generate_pascal(r, p) + 1; 
-                if (deg > n - 1 - i) deg = n - 1 - i;
-                
-                std::vector<int> targets;
-                for (int j = i + 1; j < n; ++j) targets.push_back(j);
-                std::random_shuffle(targets.begin(), targets.end());
-                
-                for (int k = 0; k < deg; ++k) {
-                    adj[i][targets[k]] = 1; // Строго верхняя треугольная матрица
-                }
-            }
-            if (is_connected()) break; // Проверка связности
-        }
-    } else {
-        // Генерация неориентированного графа (дерева) ПО РАСПРЕДЕЛЕНИЮ ПАСКАЛЯ
-        for (int i = 0; i < n; ++i) std::fill(adj[i].begin(), adj[i].end(), 0);
-        
-        int current_n = 1;  // У нас уже есть 1 вершина (индекс 0)
-        int parent_idx = 0; // Вершина, к которой мы сейчас привязываем соседей
-        
-        while (current_n < n) {
-            // Генерируем степень ветвления (количество "детей") по Паскалю
-            int deg = generate_pascal(r, p) + 1; 
-            
-            // Ограничиваем, чтобы не превысить заданное число вершин n
-            if (current_n + deg > n) {
-                deg = n - current_n;
-            }
-            
-            // Привязываем deg новых вершин к текущей parent_idx
-            for (int i = 0; i < deg; ++i) {
-                int child_idx = current_n;
-                adj[parent_idx][child_idx] = 1;
-                adj[child_idx][parent_idx] = 1; // Делаем связь двусторонней (неориентированной)
-                current_n++;
-            }
-            // Переходим к следующей вершине для ветвления
-            parent_idx++;
-        }
-        // Дерево, построенное таким "вширь" способом, 100% связно и не имеет циклов
-    }
-}
-
-
-void Graph::print() {
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) std::cout << adj[i][j] << " ";
         std::cout << "\n";
     }
 }
 
-void Graph::calculate_eccentricities() {
-    Matrix dist(n, std::vector<int>(n, INF));
-    for (int i = 0; i < n; ++i) dist[i][i] = 0;
-    
-    // Заполняем начальные расстояния
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            // Для эксцентриситета в орграфе считаем расстояние по направлению ребер
-            if (adj[i][j]) dist[i][j] = 1; 
+Graph::Graph() : vertexCount(0) {} // конструктор (изначально число вершин 0)
+
+//параметризированный конструктор
+Graph::Graph(int n) : vertexCount(n), orientedMatrix(n), undirectedMatrix(n) {}
+
+void Graph::setVertexCount(int n) { // задаем число вершин
+    vertexCount = n;
+    orientedMatrix.resize(n); // переобозначаем размер матрицы
+    undirectedMatrix.resize(n); // для этой тоже
+    weightMatrix.resize(n);
+}
+
+int Graph::getVertexCount() const { // возвращаем количество вершин
+    return vertexCount;
+}
+
+//создаем ориентированный граф
+void Graph::generateOrientedAcyclic(const PascalDistribution& distribution) {
+    orientedMatrix.resize(vertexCount); // пересоздаем матрицу по актуальному кол-ву вершин
+
+    if (vertexCount <= 1) {
+        return; // если <= 1, матрицу не строим
+    }
+
+    std::queue<int> q; // создаем очередь вершин, которые еще не использованы
+    q.push(0); // первая вешина 0
+
+    int nextVertex = 1; // следующая вершина будет 1
+
+
+    // пока еще остались свободные вершины
+    while (!q.empty() && nextVertex < vertexCount) {
+        int parent = q.front(); // родителем будет первый элемент в очереди
+        q.pop(); // как только зафиксировали родителя, сразу удаляем
+
+        int childrenCount = distribution.generate(); // генерируем количество наследников
+
+        //если очередь пуста, остались еще вершины, на генерация пустая
+        if (q.empty() && nextVertex < vertexCount && childrenCount == 0) {
+            childrenCount = 1; // строго задаем минимум одного наследника
+        }
+
+        int remaining = vertexCount - nextVertex; // сколько осталось вершин
+        if (childrenCount > remaining) { // наследников не может быть больше, чем остаток
+            childrenCount = remaining;
+        }
+
+        for (int i = 0; i < childrenCount; i++) {
+            orientedMatrix.at(parent, nextVertex) = 1; //устанавливаем связь с родителем и наследником для матрицы смежности
+            q.push(nextVertex); // наследник становится родителем
+            nextVertex++; // указываем следующего наследника
         }
     }
-            
-    // Алгоритм Флойда-Уоршелла для поиска кратчайших путей
-    for (int k = 0; k < n; ++k)
-        for (int i = 0; i < n; ++i)
-            for (int j = 0; j < n; ++j)
-                if (dist[i][k] < INF && dist[k][j] < INF)
-                    dist[i][j] = std::min(dist[i][j], dist[i][k] + dist[k][j]);
-                    
-    std::vector<int> ecc(n, 0);
-    int min_ecc = INF, max_ecc = 0;
-    
-    // Для графа, где не из каждой вершины можно достичь остальных (орграф), 
-    // эксцентриситет может быть бесконечностью. Учитываем только достижимые.
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            if (dist[i][j] != INF) {
-                ecc[i] = std::max(ecc[i], dist[i][j]);
+    //если остались всободные вешины, то досоединяем
+    int lastConnected = 0;
+    for (int v = 1; v < nextVertex; v++) {
+        lastConnected = v;
+    }
+
+    while (nextVertex < vertexCount) {
+        orientedMatrix.at(lastConnected, nextVertex) = 1;
+        lastConnected = nextVertex;
+        nextVertex++;
+    }
+}
+
+void Graph::buildUndirectedFromOriented() {
+    undirectedMatrix.resize(vertexCount); // снова пересоздаем матрицу тогоже размера
+
+    for (int i = 0; i < vertexCount; i++) {
+        for (int j = 0; j < vertexCount; j++) {
+            if (orientedMatrix.at(i, j) == 1 || orientedMatrix.at(j, i) == 1) {
+                undirectedMatrix.at(i, j) = 1;
+                undirectedMatrix.at(j, i) = 1; // просто зеркалим значения
             }
         }
-        // Если вершина ни с чем не связана исходящими ребрами (сток), ее эксцентриситет = 0
-        min_ecc = std::min(min_ecc, ecc[i]);
-        max_ecc = std::max(max_ecc, ecc[i]);
     }
+}
+
+//считаем исходящие степени
+std::vector<int> Graph::calculateOutDegrees() const {
+    std::vector<int> degrees(vertexCount, 0); // массив сепеней
+
+    for (int i = 0; i < vertexCount; i++) {
+        for (int j = 0; j < vertexCount; j++) {
+            degrees[i] += orientedMatrix.at(i, j); //сумма строки = степень вершины
+        }
+    }
+
+    return degrees;
+}
+//для неориентированного графа
+std::vector<int> Graph::calculateUndirectedDegrees() const {
+    std::vector<int> degrees(vertexCount, 0); // массив степеней
+
+    for (int i = 0; i < vertexCount; i++) {
+        for (int j = 0; j < vertexCount; j++) {
+            degrees[i] += undirectedMatrix.at(i, j); // также сумма = степень
+        }
+    }
+
+    return degrees;
+}
+
+void Graph::printOriented() const {
+    orientedMatrix.print("Матрица смежности ориентированного графа:");
+
+    std::vector<int> degrees = calculateOutDegrees();
+    std::cout << "\nИсходящие степени вершин ориентированного графа:\n";
+    for (int i = 0; i < vertexCount; i++) {
+        std::cout << "Вершина " << i+1 << ": " << degrees[i] << "\n";
+    }
+}
+
+void Graph::printUndirected() const {
+    undirectedMatrix.print("Матрица смежности неориентированного графа:");
+
+    std::vector<int> degrees = calculateUndirectedDegrees();
+    std::cout << "\nСтепени вершин неориентированного графа:\n";
+    for (int i = 0; i < vertexCount; i++) {
+        std::cout << "Вершина " << i+1 << ": " << degrees[i] << "\n";
+    }
+}
+
+const Matrix& Graph::getOrientedMatrix() const {
+    return orientedMatrix;
+}
+
+const Matrix& Graph::getUndirectedMatrix() const {
+    return undirectedMatrix;
+}
+
+    //--------------------------------------
+    //          часть 2
+    //--------------------------------------
+
+std::vector<int> Graph::bfsDistancesUndirected(int start) const {
+    // массив расстояний от стартовой точки до все остальных
+    // Значение -1 означает, что вершина ещё не посчитана
+    std::vector<int> dist(vertexCount, -1);
+
     
-    std::cout << "Эксцентриситеты:\n";
-    for (int i = 0; i < n; ++i) std::cout << "v" << i+1 << ": " << ecc[i] << "\n";
+    std::queue<int> q; // создается очередь для поиска
+
     
-    std::cout << "Центр графа (вершины с мин. эксцентриситетом): ";
-    for (int i = 0; i < n; ++i) if (ecc[i] == min_ecc) std::cout << i+1 << " ";
-    
-    std::cout << "\nДиаметральные вершины (пары с макс. расстоянием): ";
-    bool found_diam = false;
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            if (i != j && dist[i][j] == max_ecc && max_ecc > 0) {
-                std::cout << "(" << i+1 << " -> " << j+1 << ") ";
-                found_diam = true;
+    dist[start] = 0; // сама к себе = 0
+    q.push(start); // добавляем в очередь начальную вершину
+
+    // Пока еще остались вершины
+    while (!q.empty()) {
+        int v = q.front(); // запоминаем первую вершину в очереди
+        q.pop();// сразу удаляем
+
+        for (int u = 0; u < vertexCount; u++) {
+            // Если есть ребро v-u и вершина u ещё не посещена
+            if (undirectedMatrix.at(v, u) == 1 && dist[u] == -1) {
+                // Тогда расстояние до u равно расстоянию до v + 1
+                dist[u] = dist[v] + 1;
+
+                q.push(u); //становится радителем
             }
         }
     }
-    if (!found_diam) std::cout << "Нет подходящих пар.";
+
+    return dist;
+}
+
+//эксцентриситет
+std::vector<int> Graph::findEccentricitiesUndirected() const {
+    // Здесь будем хранить эксцентриситет каждой вершины
+    std::vector<int> eccentricities(vertexCount, 0);
+
+    // Для каждой вершины запускаем BFS
+    for (int v = 0; v < vertexCount; v++) {
+        std::vector<int> dist = bfsDistancesUndirected(v);
+
+        // Эксцентриситет = максимальное расстояние от вершины v до всех остальных
+        int maxDistance = 0;
+
+        for (int u = 0; u < vertexCount; u++) {
+            if (dist[u] > maxDistance) {
+                maxDistance = dist[u];
+            }
+        }
+
+        eccentricities[v] = maxDistance;
+    }
+
+    return eccentricities;
+}
+
+//радиус
+int Graph::findRadiusUndirected() const {
+    // Радиус графа — минимальный из эксцентриситетов
+    std::vector<int> eccentricities = findEccentricitiesUndirected();
+
+    int radius = eccentricities[0];
+
+    for (int i = 1; i < vertexCount; i++) {
+        if (eccentricities[i] < radius) {
+            radius = eccentricities[i];
+        }
+    }
+
+    return radius;
+}
+
+//диаметр
+int Graph::findDiameterUndirected() const {
+    // Диаметр графа — максимальный из эксцентриситетов
+    std::vector<int> eccentricities = findEccentricitiesUndirected();
+
+    int diameter = eccentricities[0];
+
+    for (int i = 1; i < vertexCount; i++) {
+        if (eccentricities[i] > diameter) {
+            diameter = eccentricities[i];
+        }
+    }
+
+    return diameter;
+}
+
+
+//центр
+std::vector<int> Graph::findCenterUndirected() const {
+    // Центр — это вершины, эксцентриситет которых равен радиусу
+    std::vector<int> eccentricities = findEccentricitiesUndirected();
+    int radius = findRadiusUndirected();
+
+    std::vector<int> center;
+
+    for (int v = 0; v < vertexCount; v++) {
+        if (eccentricities[v] == radius) {
+            center.push_back(v);
+        }
+    }
+
+    return center;
+}
+
+//диаметр вершины
+std::vector<int> Graph::findDiametralVerticesUndirected() const {
+    // Диаметральные вершины — те, чей эксцентриситет равен диаметру
+    std::vector<int> eccentricities = findEccentricitiesUndirected();
+    int diameter = findDiameterUndirected();
+
+    std::vector<int> diametralVertices;
+
+    for (int v = 0; v < vertexCount; v++) {
+        if (eccentricities[v] == diameter) {
+            diametralVertices.push_back(v);
+        }
+    }
+
+    return diametralVertices;
+}
+
+void Graph::printGraphCharacteristicsUndirected() const {
+    std::vector<int> eccentricities = findEccentricitiesUndirected();
+    int radius = findRadiusUndirected();
+    int diameter = findDiameterUndirected();
+    std::vector<int> center = findCenterUndirected();
+    std::vector<int> diametralVertices = findDiametralVerticesUndirected();
+
+    std::cout << "\nЭксцентриситеты вершин:\n";
+    for (int v = 0; v < vertexCount; v++) {
+        std::cout << "Вершина " << v+1 << ": " << eccentricities[v] << "\n";
+    }
+
+    std::cout << "\nРадиус графа: " << radius << "\n";
+
+    std::cout << "Центр графа: ";
+    for (int v : center) {
+        std::cout << v << " ";
+    }
+    std::cout << "\n";
+
+    std::cout << "Диаметр графа: " << diameter << "\n";
+
+    std::cout << "Диаметральные вершины: ";
+    for (int v : diametralVertices) {
+        std::cout << v << " ";
+    }
     std::cout << "\n";
 }
 
-void Graph::count_paths(int u, int v) {
-    u--; v--; // Переход к 0-индексации
-    Matrix sumP = adj;
-    Matrix currentP = adj;
-    
-    // По методу Шимбелла: P + P^2 + ... + P^(n-1)
-    for (int k = 2; k <= n - 1; ++k) {
-        currentP = matrix_multiply(currentP, adj);
-        sumP = matrix_add(sumP, currentP);
+    //--------------------------------------
+    //          часть 3
+    //--------------------------------------
+
+
+//строим матрицу весов
+void Graph::generateWeightMatrix(const PascalDistribution& distribution, int mode) {
+    weightMatrix.resize(vertexCount); //генерируем матрицу нужного размера 
+
+    // Сначала считаем, что путей нигде нет.
+    // Поэтому во все ячейки ставим INF.
+    for (int i = 0; i < vertexCount; i++) {
+        for (int j = 0; j < vertexCount; j++) {
+            weightMatrix.at(i, j) = INF;
+        }
     }
-    
-    int routes = sumP[u][v];
-    if (routes > 0) std::cout << "Маршрут возможен. Количество маршрутов: " << routes << "\n";
-    else std::cout << "Построение маршрута невозможно.\n";
-}
 
-Shimbell::Shimbell(int n) : n(n) {
-    W.assign(n, std::vector<int>(n, INF));
-    for(int i = 0; i < n; ++i) W[i][i] = 0;
-}
+    // Генерируем веса только для существующих дуг ориентированного графа
+    for (int i = 0; i < vertexCount; i++) {
+        for (int j = 0; j < vertexCount; j++) {
+            if (orientedMatrix.at(i, j) == 1) {
+                // Получаем положительное число по распределению Паскаля
+                int value = distribution.generate() + 1;
 
-void Shimbell::generate_weights(int edges, int r, double p, int mode) {
-    int added = 0;
-    while(added < edges) {
-        int u = std::rand() % n;
-        int v = std::rand() % n;
-        if (u != v && W[u][v] == INF) {
-            W[u][v] = generate_weight(r, p, mode);
-            added++;
+                
+                // 0 - только положительные
+                // 1 - только отрицательные
+                // 2 - смешанные
+                if (mode == 0) {
+                    weightMatrix.at(i, j) = value;
+                } else if (mode == 1) {
+                    weightMatrix.at(i, j) = -value;
+                } else if (mode == 2) {
+                    if (std::rand() % 2 == 0) {
+                        weightMatrix.at(i, j) = value;
+                    } else {
+                        weightMatrix.at(i, j) = -value;
+                    }
+                } else {
+                    // Если режим ошибочный, по умолчанию делаем положительный вес
+                    weightMatrix.at(i, j) = value;
+                }
+            }
         }
     }
 }
 
-void Shimbell::print_matrix(const Matrix& m) {
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            if (m[i][j] >= INF/2) std::cout << std::setw(5) << "INF";
-            else if (m[i][j] <= -INF/2) std::cout << std::setw(5) << "-INF";
-            else std::cout << std::setw(5) << m[i][j];
+//возвращение матрицы весов
+const Matrix& Graph::getWeightMatrix() const {
+    return weightMatrix;
+}
+
+//вывод матрицы весов
+void Graph::printWeightMatrix() const {
+    std::cout << "\nВесовая матрица:\n\n    ";
+    for (int j = 0; j < vertexCount; j++) {
+        std::cout << std::setw(6) << j+1;
+    }
+    std::cout << "\n";
+
+    for (int i = 0; i < vertexCount; i++) {
+        std::cout << std::setw(3) << i+1 << " ";
+        for (int j = 0; j < vertexCount; j++) {
+            if (weightMatrix.at(i, j) == INF) {
+                std::cout << std::setw(6) << "INF";
+            } else {
+                std::cout << std::setw(6) << weightMatrix.at(i, j);
+            }
         }
         std::cout << "\n";
     }
 }
 
-void Shimbell::find_shortest_paths() {
-    Matrix currentW = W;
-    for (int step = 2; step <= n - 1; ++step) {
-        Matrix nextW = currentW;
-        for (int i = 0; i < n; ++i)
-            for (int j = 0; j < n; ++j)
-                for (int k = 0; k < n; ++k)
-                    if (currentW[i][k] != INF && W[k][j] != INF)
-                        nextW[i][j] = std::min(nextW[i][j], currentW[i][k] + W[k][j]);
-        currentW = nextW;
+//Один шаг для минимального пути
+Matrix Graph::shimbellStepMin(const Matrix& left, const Matrix& right) const {
+    // Результирующая матрица
+    Matrix result(vertexCount);
+
+    // Изначально считаем, что пути между любыми вершинами нет
+    for (int i = 0; i < vertexCount; i++) {
+        for (int j = 0; j < vertexCount; j++) {
+            result.at(i, j) = INF;
+        }
     }
-    std::cout << "\nМатрица минимальных путей:\n";
-    print_matrix(currentW);
+
+    // Формула:
+    // result[i][j] = min_k ( left[i][k] + right[k][j] )
+    for (int i = 0; i < vertexCount; i++) {
+        for (int j = 0; j < vertexCount; j++) {
+            for (int k = 0; k < vertexCount; k++) {
+                // Если одного из путей нет, такой вариант не рассматриваем
+                if (left.at(i, k) == INF || right.at(k, j) == INF) {
+                    continue;
+                }
+
+                int candidate = left.at(i, k) + right.at(k, j);
+
+                if (candidate < result.at(i, j)) {
+                    result.at(i, j) = candidate;
+                }
+            }
+        }
+    }
+
+    return result;
 }
 
-void Shimbell::find_longest_paths() {
-    Matrix currentW = W;
-    for (int i = 0; i < n; ++i)
-        for (int j = 0; j < n; ++j)
-            if (currentW[i][j] == INF) currentW[i][j] = -INF;
-            
-    Matrix baseW = currentW;
-    for (int step = 2; step <= n - 1; ++step) {
-        Matrix nextW = currentW;
-        for (int i = 0; i < n; ++i)
-            for (int j = 0; j < n; ++j)
-                for (int k = 0; k < n; ++k)
-                    if (currentW[i][k] != -INF && baseW[k][j] != -INF)
-                        nextW[i][j] = std::max(nextW[i][j], currentW[i][k] + baseW[k][j]);
-        currentW = nextW;
+Matrix Graph::shimbellStepMax(const Matrix& left, const Matrix& right) const {
+    // Для максимального пути тоже используем INF
+    Matrix result(vertexCount);
+
+    for (int i = 0; i < vertexCount; i++) {
+        for (int j = 0; j < vertexCount; j++) {
+            result.at(i, j) = INF;
+        }
     }
-    
-    for (int i = 0; i < n; ++i)
-        for (int j = 0; j < n; ++j)
-            if (currentW[i][j] <= -INF/2) currentW[i][j] = INF;
-            
-    std::cout << "\nМатрица максимальных путей:\n";
-    print_matrix(currentW);
+
+    // Формула:
+    // result[i][j] = max_k ( left[i][k] + right[k][j] )
+    for (int i = 0; i < vertexCount; i++) {
+        for (int j = 0; j < vertexCount; j++) {
+            bool found = false;
+
+            for (int k = 0; k < vertexCount; k++) {
+                if (left.at(i, k) == INF || right.at(k, j) == INF) {
+                    continue;
+                }
+
+                int candidate = left.at(i, k) + right.at(k, j);
+
+                if (!found || candidate > result.at(i, j)) {
+                    result.at(i, j) = candidate;
+                    found = true;
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+Matrix Graph::shimbellMin(int edgesCount) const {
+    // Если пользователь ввёл некорректное число рёбер,
+    // просто возвращаем текущую весовую матрицу
+    if (edgesCount <= 1) {
+        return weightMatrix;
+    }
+
+    // Для путей длины 1 ребро матрица уже есть: это weightMatrix
+    Matrix result = weightMatrix;
+
+    // Каждый следующий шаг увеличивает длину пути ровно на 1 ребро
+    for (int step = 2; step <= edgesCount; step++) {
+        result = shimbellStepMin(result, weightMatrix);
+    }
+
+    return result;
+}
+
+Matrix Graph::shimbellMax(int edgesCount) const {
+    if (edgesCount <= 1) {
+        return weightMatrix;
+    }
+
+    Matrix result = weightMatrix;
+
+    for (int step = 2; step <= edgesCount; step++) {
+        result = shimbellStepMax(result, weightMatrix);
+    }
+
+    return result;
+}
+
+void Graph::printShimbellResult(int edgesCount, bool findMin, bool findMax) const {
+    if (findMin) {
+        Matrix minMatrix = shimbellMin(edgesCount);
+
+        std::cout << "\nМатрица минимальных путей методом Шимбелла"
+                  << " для длины " << edgesCount << " рёбер:\n\n    ";
+
+        for (int j = 0; j < vertexCount; j++) {
+            std::cout << std::setw(6) << j+1;
+        }
+        std::cout << "\n";
+
+        for (int i = 0; i < vertexCount; i++) {
+            std::cout << std::setw(3) << i+1 << " ";
+            for (int j = 0; j < vertexCount; j++) {
+                if (minMatrix.at(i, j) == INF) {
+                    std::cout << std::setw(6) << "INF";
+                } else {
+                    std::cout << std::setw(6) << minMatrix.at(i, j);
+                }
+            }
+            std::cout << "\n";
+        }
+    }
+
+    if (findMax) {
+        Matrix maxMatrix = shimbellMax(edgesCount);
+
+        std::cout << "\nМатрица максимальных путей методом Шимбелла"
+                  << " для длины " << edgesCount << " рёбер:\n\n    ";
+
+        for (int j = 0; j < vertexCount; j++) {
+            std::cout << std::setw(6) << j+1;
+        }
+        std::cout << "\n";
+
+        for (int i = 0; i < vertexCount; i++) {
+            std::cout << std::setw(3) << i+1 << " ";
+            for (int j = 0; j < vertexCount; j++) {
+                if (maxMatrix.at(i, j) == INF) {
+                    std::cout << std::setw(6) << "INF";
+                } else {
+                    std::cout << std::setw(6) << maxMatrix.at(i, j);
+                }
+            }
+            std::cout << "\n";
+        }
+    }
+}
+
+
+
+    //--------------------------------------
+    //          часть 4
+    //--------------------------------------
+
+
+
+
+
+bool Graph::routeExistsOriented(int start, int finish) const {
+    // Проверка корректности номеров вершин
+    if (start < 0 || start >= vertexCount || finish < 0 || finish >= vertexCount) {
+        return false;
+    }
+
+    // visited[i] = была ли вершина i уже посещена
+    std::vector<bool> visited(vertexCount, false);
+
+    // Рекурсивный DFS
+    std::function<bool(int)> dfs = [&](int v) -> bool {
+        // Если дошли до конечной вершины, маршрут существует
+        if (v == finish) {
+            return true;
+        }
+
+        visited[v] = true;
+
+        // Просматриваем всех возможных соседей по ориентированному графу
+        for (int u = 0; u < vertexCount; u++) {
+            if (orientedMatrix.at(v, u) == 1 && !visited[u]) {
+                if (dfs(u)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    };
+
+    return dfs(start);
+}
+
+long long Graph::countRoutesOriented(int start, int finish) const {
+    // Проверка корректности номеров вершин
+    if (start < 0 || start >= vertexCount || finish < 0 || finish >= vertexCount) {
+        return 0;
+    }
+
+    // memo[v] будет хранить количество маршрутов из v в finish.
+    // -1 означает, что значение ещё не вычислено.
+    std::vector<long long> memo(vertexCount, -1);
+
+    std::function<long long(int)> dfsCount = [&](int v) -> long long {
+        // Если пришли в конечную вершину, найден один маршрут
+        if (v == finish) {
+            return 1;
+        }
+
+        // Если уже считали раньше, используем готовый результат
+        if (memo[v] != -1) {
+            return memo[v];
+        }
+
+        long long total = 0;
+
+        // Суммируем количество маршрутов через всех потомков
+        for (int u = 0; u < vertexCount; u++) {
+            if (orientedMatrix.at(v, u) == 1) {
+                total += dfsCount(u);
+            }
+        }
+
+        memo[v] = total;
+        return total;
+    };
+
+    return dfsCount(start);
+}
+
+void Graph::printRouteInfoOriented(int start, int finish) const {
+    // Проверка корректности номеров вершин
+    if (start < 0 || start >= vertexCount || finish < 0 || finish >= vertexCount) {
+        std::cout << "Некорректные номера вершин.\n";
+        return;
+    }
+
+    bool exists = routeExistsOriented(start, finish);
+    long long routesCount = countRoutesOriented(start, finish);
+
+    std::cout << "\nМаршрут из вершины " << start
+              << " в вершину " << finish << ":\n";
+
+    if (exists) {
+        std::cout << "Маршрут существует.\n";
+    } else {
+        std::cout << "Маршрут не существует.\n";
+    }
+
+    std::cout << "Количество маршрутов: " << routesCount << "\n";
 }

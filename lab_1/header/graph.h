@@ -2,44 +2,86 @@
 #define GRAPH_H
 
 #include <vector>
+#include <string>
+#include <queue>
+#include "distribution.h"
 
-using Matrix = std::vector<std::vector<int>>;
-const int INF = 1e9;
+class Matrix {
+private:
+    std::vector<std::vector<int>> data; // сама матрица
+
+public:
+    Matrix();
+    Matrix(int size);
+
+    void resize(int size);
+    int size() const;
+
+    int& at(int i, int j);
+    int at(int i, int j) const;
+
+    const std::vector<std::vector<int>>& getData() const;
+
+    void print(const std::string& title) const;
+};
 
 class Graph {
+private:
+    int vertexCount; // количество вершин
+    Matrix orientedMatrix; // ориентированный граф
+    Matrix undirectedMatrix; // неориентированный граф
+    Matrix weightMatrix; // весовая матрица
+
 public:
-    int n;
-    bool is_directed;
-    Matrix adj;
+    Graph();
+    Graph(int n);
 
-    Graph(int n, bool is_directed);
-    void generate_acyclic_connected(int r, double p);
-    void print();
-    
-    // Проверка связности (Следствие 1 из презентации)
-    bool is_connected();
-    
-    // Подсчет эксцентриситетов, центров и диаметра
-    void calculate_eccentricities();
-    
-    // Подсчет маршрутов методом Шимбелла
-    void count_paths(int u, int v);
+    void setVertexCount(int n);
+    int getVertexCount() const;
+
+    void generateOrientedAcyclic(const PascalDistribution& distribution);
+    void buildUndirectedFromOriented();
+
+    std::vector<int> calculateOutDegrees() const;
+    std::vector<int> calculateUndirectedDegrees() const;
+
+    void printOriented() const;
+    void printUndirected() const;
+
+    const Matrix& getOrientedMatrix() const;
+    const Matrix& getUndirectedMatrix() const;
+    //--------------------------------------
+    //          часть 2
+    //--------------------------------------
+    std::vector<int> bfsDistancesUndirected(int start) const;
+    std::vector<int> findEccentricitiesUndirected() const;
+    int findRadiusUndirected() const;
+    int findDiameterUndirected() const;
+    std::vector<int> findCenterUndirected() const;
+    std::vector<int> findDiametralVerticesUndirected() const;
+
+    void printGraphCharacteristicsUndirected() const;
+    //--------------------------------------
+    //          часть 3
+    //--------------------------------------
+    void generateWeightMatrix(const PascalDistribution& distribution, int mode);
+    const Matrix& getWeightMatrix() const;
+    void printWeightMatrix() const;
+
+    Matrix shimbellStepMin(const Matrix& left, const Matrix& right) const;
+    Matrix shimbellStepMax(const Matrix& left, const Matrix& right) const;
+
+    Matrix shimbellMin(int edgesCount) const;
+    Matrix shimbellMax(int edgesCount) const;
+
+    void printShimbellResult(int edgesCount, bool findMin, bool findMax) const;
+    //--------------------------------------
+    //          часть 4
+    //--------------------------------------
+    bool routeExistsOriented(int start, int finish) const;
+    long long countRoutesOriented(int start, int finish) const;
+    void printRouteInfoOriented(int start, int finish) const;
+
 };
-
-class Shimbell {
-public:
-    int n;
-    Matrix W;
-
-    Shimbell(int n);
-    void generate_weights(int edges, int r, double p, int mode);
-    void print_matrix(const Matrix& m);
-    void find_shortest_paths();
-    void find_longest_paths();
-};
-
-// Вспомогательные матричные операции
-Matrix matrix_multiply(const Matrix& A, const Matrix& B);
-Matrix matrix_add(const Matrix& A, const Matrix& B);
 
 #endif

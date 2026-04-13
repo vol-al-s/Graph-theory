@@ -1,138 +1,199 @@
 #include <iostream>
 #include <ctime>
-#include <limits>
+#include <cstdlib>
 #include "../header/graph.h"
+#include "../header/distribution.h"
 
 using namespace std;
 
-void print_menu() {
-    cout << "\n=== ЛАБОРАТОРНАЯ РАБОТА № 1 ===" << endl;
-    cout << "1. Сформировать связный ациклический граф" << endl;
-    cout << "2. Посчитать эксцентриситеты, центры и диаметральные вершины" << endl;
-    cout << "3. Метод Шимбелла (минимальные и максимальные пути)" << endl;
-    cout << "4. Найти возможность и количество маршрутов от А до B" << endl;
-    cout << "0. Выход" << endl;
+void mainMenu() {
+    cout << "\n========== МЕНЮ ==========\n";
+    cout << "1. Сгенерировать граф\n";
+    cout << "2. Перегенерировать граф\n";
+    cout << "3. Показать текущий граф\n";
+    cout << "4. Посчитать эксцентриситеты, центр и диаметральные вершины\n";
+    cout << "5. Выполнить метод Шимбелла\n";
+    cout << "0. Выход\n";
     cout << "Ваш выбор: ";
 }
 
-int get_valid_input(const string& prompt) {
-    int value;
-    while (true) {
-        cout << prompt;
-        if (cin >> value) {
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            return value;
-        } else {
-            cout << "Ошибка: введено некорректное значение. Пожалуйста, введите целое число.\n";
-            cin.clear();
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        }
+void graphOutputMenu() {
+    cout << "\nКакой граф вывести?\n";
+    cout << "1. Только ориентированный\n";
+    cout << "2. Только неориентированный\n";
+    cout << "3. Оба графа\n";
+    cout << "Ваш выбор: ";
+}
+
+void shimbellWeightModeMenu() {
+    cout << "\nВыберите режим генерации весов:\n";
+    cout << "1. Только положительные\n";
+    cout << "2. Только отрицательные\n";
+    cout << "3. Смешанные\n";
+    cout << "Ваш выбор: ";
+}
+
+void shimbellResultMenu() {
+    cout << "\nЧто нужно найти методом Шимбелла?\n";
+    cout << "1. Минимальные пути\n";
+    cout << "2. Максимальные пути\n";
+    cout << "3. И минимальные, и максимальные\n";
+    cout << "Ваш выбор: ";
+}
+
+void generateGraph(Graph& graph, const PascalDistribution& distribution) {
+    int n;
+    cout << "Введите количество вершин: ";
+    cin >> n;
+
+    if (n <= 0) {
+        cout << "Количество вершин должно быть положительным.\n";
+        return;
+    }
+
+    graph.setVertexCount(n);
+    graph.generateOrientedAcyclic(distribution);
+    graph.buildUndirectedFromOriented();
+
+    cout << "Граф успешно сгенерирован и сохранён в памяти.\n";
+}
+
+void showCurrentGraph(const Graph& graph) {
+    if (graph.getVertexCount() == 0) {
+        cout << "Сначала необходимо сгенерировать граф.\n";
+        return;
+    }
+
+    int graphChoice;
+    graphOutputMenu();
+    cin >> graphChoice;
+
+    if (graphChoice == 1) {
+        graph.printOriented();
+    }
+    else if (graphChoice == 2) {
+        graph.printUndirected();
+    }
+    else if (graphChoice == 3) {
+        graph.printOriented();
+        graph.printUndirected();
+    }
+    else {
+        cout << "Некорректный выбор типа графа.\n";
     }
 }
 
-int main() {
-    srand(time(NULL));
-    int choice;
-    Graph* g = nullptr;
-    
-    int r = 3;      
-    double p = 0.5;
+void runShimbell(Graph& graph, const PascalDistribution& distribution) {
+    if (graph.getVertexCount() == 0) {
+        cout << "Сначала необходимо сгенерировать граф.\n";
+        return;
+    }
 
-    while (true) {
-        print_menu();
-        
-        if (!(cin >> choice)) {
-            cout << "Ошибка: введите число от 0 до 4.\n";
-            cin.clear();
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            continue;
-        }
-        
-        if (choice == 0) break;
-        
+    int weightModeChoice;
+    shimbellWeightModeMenu();
+    cin >> weightModeChoice;
+
+    int mode;
+    if (weightModeChoice == 1) {
+        mode = 0; // положительные
+    }
+    else if (weightModeChoice == 2) {
+        mode = 1; // отрицательные
+    }
+    else if (weightModeChoice == 3) {
+        mode = 2; // смешанные
+    }
+    else {
+        cout << "Некорректный выбор режима генерации весов.\n";
+        return;
+    }
+
+    int edgesCount;
+    cout << "Введите количество рёбер в пути: ";
+    cin >> edgesCount;
+
+    if (edgesCount <= 0) {
+        cout << "Количество рёбер должно быть положительным.\n";
+        return;
+    }
+
+    int resultChoice;
+    shimbellResultMenu();
+    cin >> resultChoice;
+
+    bool findMin = false;
+    bool findMax = false;
+
+    if (resultChoice == 1) {
+        findMin = true;
+    }
+    else if (resultChoice == 2) {
+        findMax = true;
+    }
+    else if (resultChoice == 3) {
+        findMin = true;
+        findMax = true;
+    }
+    else {
+        cout << "Некорректный выбор результата метода Шимбелла.\n";
+        return;
+    }
+
+    graph.generateWeightMatrix(distribution, mode);
+
+    cout << "\nСгенерированная весовая матрица:\n";
+    graph.printWeightMatrix();
+
+    graph.printShimbellResult(edgesCount, findMin, findMax);
+}
+
+int main() {
+    srand((unsigned)time(0));
+
+    const int r = 3;
+    const double p = 0.5;
+
+    PascalDistribution distribution(r, p);
+    Graph graph;
+
+    int choice;
+
+    do {
+        mainMenu();
+        cin >> choice;
+
         if (choice == 1) {
-            int n, graph_type;
-            while (true) {
-                n = get_valid_input("Введите количество вершин графа (n > 1): ");
-                if (n > 1) break;
-                cout << "Граф должен содержать как минимум 2 вершины.\n";
-            }
-            
-            while (true) {
-                graph_type = get_valid_input("Тип графа (1 - Ориентированный, 2 - Неориентированный): ");
-                if (graph_type == 1 || graph_type == 2) break;
-                cout << "Пожалуйста, введите 1 или 2.\n";
-            }
-            
-            bool is_directed = (graph_type == 1);
-            
-            if (g) delete g;
-            g = new Graph(n, is_directed);
-            g->generate_acyclic_connected(r, p);
-            
-            if (is_directed) {
-                cout << "\nСгенерирована матрица смежности (Ориентированный ациклический граф):\n";
+            if (graph.getVertexCount() != 0) {
+                cout << "Граф уже существует.\n";
+                cout << "Используйте пункт 2, если хотите перегенерировать его.\n";
             } else {
-                cout << "\nСгенерирована матрица смежности (Неориентированное дерево):\n";
+                generateGraph(graph, distribution);
             }
-            g->print();
-        } 
+        }
         else if (choice == 2) {
-            if (!g) { cout << "Ошибка: Сначала выполните пункт 1!\n"; continue; }
-            g->calculate_eccentricities();
-        } 
+            generateGraph(graph, distribution);
+        }
         else if (choice == 3) {
-            int n, edges, mode;
-            while (true) {
-                n = get_valid_input("Введите количество вершин для генерации весовой матрицы (n > 1): ");
-                if (n > 1) break;
-                cout << "Матрица должна содержать как минимум 2 вершины.\n";
-            }
-            
-            int max_edges = n * (n - 1); 
-            while (true) {
-                edges = get_valid_input("Введите количество ребер: ");
-                if (edges >= 1 && edges <= max_edges) break;
-                cout << "Количество ребер для " << n << " вершин должно быть от 1 до " << max_edges << ".\n";
-            }
-            
-            while (true) {
-                mode = get_valid_input("Режим (0:положительные, 1:отрицательные, 2:смешанные): ");
-                if (mode == 0 || mode == 1 || mode == 2) break;
-                cout << "Доступные режимы: 0, 1 или 2.\n";
-            }
-            
-            Shimbell sh(n);
-            sh.generate_weights(edges, r, p, mode);
-            cout << "\nСгенерированная весовая матрица:\n";
-            sh.print_matrix(sh.W);
-            
-            sh.find_shortest_paths();
-            sh.find_longest_paths();
-        } 
+            showCurrentGraph(graph);
+        }
         else if (choice == 4) {
-            if (!g) { cout << "Ошибка: Сначала выполните пункт 1!\n"; continue; }
-            int u, v;
-            
-            while (true) {
-                u = get_valid_input("Введите начальную вершину (1-" + to_string(g->n) + "): ");
-                if (u >= 1 && u <= g->n) break;
-                cout << "Вершина должна быть в диапазоне от 1 до " << g->n << ".\n";
+            if (graph.getVertexCount() == 0) {
+                cout << "Сначала необходимо сгенерировать граф.\n";
+            } else {
+                graph.printGraphCharacteristicsUndirected();
             }
-            
-            while (true) {
-                v = get_valid_input("Введите конечную вершину (1-" + to_string(g->n) + "): ");
-                if (v >= 1 && v <= g->n) break;
-                cout << "Вершина должна быть в диапазоне от 1 до " << g->n << ".\n";
-            }
-            
-            g->count_paths(u, v);
+        }
+        else if (choice == 5) {
+            runShimbell(graph, distribution);
+        }
+        else if (choice == 0) {
+            cout << "Выход из программы.\n";
         }
         else {
-            cout << "Неверный пункт меню. Выберите от 0 до 4.\n";
+            cout << "Некорректный пункт меню.\n";
         }
-    }
-    
-    if (g) delete g;
+
+    } while (choice != 0);
+
     return 0;
 }
