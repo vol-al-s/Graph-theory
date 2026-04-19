@@ -40,6 +40,7 @@ public:
     int getVertexCount() const;
 
     void generateOrientedAcyclic(const PascalDistribution& distribution);
+    void generateOrientedAcyclicFromDegrees(const std::vector<int>& outDegrees);
     void buildUndirectedFromOriented();
 
     std::vector<int> calculateOutDegrees() const;

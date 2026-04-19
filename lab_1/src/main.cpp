@@ -1,7 +1,7 @@
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
-#include "../header/graph.h"
+#include "../header/general.h"
 #include "../header/distribution.h"
 
 using namespace std;
@@ -12,8 +12,10 @@ void mainMenu() {
     cout << "2. Перегенерировать граф\n";
     cout << "3. Показать текущий граф\n";
     cout << "4. Посчитать эксцентриситеты, центр и диаметральные вершины\n";
-    cout << "5. Выполнить метод Шимбелла\n";
-    cout << "6. Проверить существование маршрута и количество маршрутов\n";
+    cout << "5. Сгенерировать весовую матрицу\n";
+    cout << "6. Показать текущую весовую матрицу\n";
+    cout << "7. Выполнить метод Шимбелла\n";
+    cout << "8. Проверить существование маршрута и количество маршрутов\n";
     cout << "0. Выход\n";
     cout << "Ваш выбор: ";
 }
@@ -84,7 +86,7 @@ void showCurrentGraph(const Graph& graph) {
     }
 }
 
-void runShimbell(Graph& graph, const PascalDistribution& distribution) {
+void generateWeights(Graph& graph, const PascalDistribution& distribution, bool& weightMatrixCreated) {
     if (graph.getVertexCount() == 0) {
         cout << "Сначала необходимо сгенерировать граф.\n";
         return;
@@ -96,16 +98,33 @@ void runShimbell(Graph& graph, const PascalDistribution& distribution) {
 
     int mode;
     if (weightModeChoice == 1) {
-        mode = 0; // положительные
+        mode = 0;
     }
     else if (weightModeChoice == 2) {
-        mode = 1; // отрицательные
+        mode = 1;
     }
     else if (weightModeChoice == 3) {
-        mode = 2; // смешанные
+        mode = 2;
     }
     else {
         cout << "Некорректный выбор режима генерации весов.\n";
+        return;
+    }
+
+    graph.generateWeightMatrix(distribution, mode);
+    weightMatrixCreated = true;
+
+    cout << "Весовая матрица успешно сгенерирована и сохранена.\n";
+}
+
+void runShimbell(Graph& graph, bool weightMatrixCreated) {
+    if (graph.getVertexCount() == 0) {
+        cout << "Сначала необходимо сгенерировать граф.\n";
+        return;
+    }
+
+    if (!weightMatrixCreated) {
+        cout << "Сначала необходимо сгенерировать весовую матрицу.\n";
         return;
     }
 
@@ -114,7 +133,13 @@ void runShimbell(Graph& graph, const PascalDistribution& distribution) {
     cin >> edgesCount;
 
     if (edgesCount < 0) {
-        cout << "Количество рёбер должно быть положительным.\n";
+        cout << "Количество рёбер не может быть отрицательным.\n";
+        return;
+    }
+
+    if (edgesCount > graph.getVertexCount() - 1) {
+        cout << "Для ациклического графа длина пути не может быть больше "
+             << graph.getVertexCount() - 1 << ".\n";
         return;
     }
 
@@ -140,11 +165,6 @@ void runShimbell(Graph& graph, const PascalDistribution& distribution) {
         return;
     }
 
-    graph.generateWeightMatrix(distribution, mode);
-
-    cout << "\nСгенерированная весовая матрица:\n";
-    graph.printWeightMatrix();
-
     graph.printShimbellResult(edgesCount, findMin, findMax);
 }
 
@@ -161,7 +181,8 @@ void runRoutes(Graph& graph) {
     cout << "Введите конечную вершину: ";
     cin >> finish;
 
-    graph.printRouteInfoOriented(start, finish);
+    // Внутри Graph используется нумерация с 0
+    graph.printRouteInfoOriented(start - 1, finish - 1);
 }
 
 int main() {
@@ -172,6 +193,8 @@ int main() {
 
     PascalDistribution distribution(r, p);
     Graph graph;
+
+    bool weightMatrixCreated = false;
 
     int choice;
 
@@ -185,10 +208,12 @@ int main() {
                 cout << "Используйте пункт 2, если хотите перегенерировать его.\n";
             } else {
                 generateGraph(graph, distribution);
+                weightMatrixCreated = false;
             }
         }
         else if (choice == 2) {
             generateGraph(graph, distribution);
+            weightMatrixCreated = false;
         }
         else if (choice == 3) {
             showCurrentGraph(graph);
@@ -201,9 +226,19 @@ int main() {
             }
         }
         else if (choice == 5) {
-            runShimbell(graph, distribution);
+            generateWeights(graph, distribution, weightMatrixCreated);
         }
         else if (choice == 6) {
+            if (!weightMatrixCreated) {
+                cout << "Сначала необходимо сгенерировать весовую матрицу.\n";
+            } else {
+                graph.printWeightMatrix();
+            }
+        }
+        else if (choice == 7) {
+            runShimbell(graph, weightMatrixCreated);
+        }
+        else if (choice == 8) {
             runRoutes(graph);
         }
         else if (choice == 0) {
