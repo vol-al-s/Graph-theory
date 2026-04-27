@@ -11,30 +11,27 @@
     //          часть 2
     //--------------------------------------
 
-std::vector<int> Graph::bfsDistancesUndirected(int start) const {
-    // массив расстояний от стартовой точки до все остальных
-    // Значение -1 означает, что вершина ещё не посчитана
+std::vector<int> Graph::bfsDistances(int start, bool useOriented) const {
     std::vector<int> dist(vertexCount, -1);
 
-    
-    std::queue<int> q; // создается очередь для поиска
+    if (start < 0 || start >= vertexCount) {
+        return dist;
+    }
 
-    
-    dist[start] = 0; // сама к себе = 0
-    q.push(start); // добавляем в очередь начальную вершину
+    const Matrix& matrix = useOriented ? orientedMatrix : undirectedMatrix;
 
-    // Пока еще остались вершины
+    std::queue<int> q;
+    dist[start] = 0;
+    q.push(start);
+
     while (!q.empty()) {
-        int v = q.front(); // запоминаем первую вершину в очереди
-        q.pop();// сразу удаляем
+        int v = q.front();
+        q.pop();
 
         for (int u = 0; u < vertexCount; u++) {
-            // Если есть ребро v-u и вершина u ещё не посещена
-            if (undirectedMatrix.at(v, u) == 1 && dist[u] == -1) {
-                // Тогда расстояние до u равно расстоянию до v + 1
+            if (matrix.at(v, u) == 1 && dist[u] == -1) {
                 dist[u] = dist[v] + 1;
-
-                q.push(u); //становится радителем
+                q.push(u);
             }
         }
     }
@@ -43,23 +40,22 @@ std::vector<int> Graph::bfsDistancesUndirected(int start) const {
 }
 
 //эксцентриситет
-std::vector<int> Graph::findEccentricitiesUndirected() const {
-    // Здесь будем хранить эксцентриситет каждой вершины
+std::vector<int> Graph::findEccentricities(bool useOriented) const {
     std::vector<int> eccentricities(vertexCount, 0);
 
-    // Для каждой вершины запускаем BFS
     for (int v = 0; v < vertexCount; v++) {
-        std::vector<int> dist = bfsDistancesUndirected(v);
+        std::vector<int> dist = bfsDistances(v, useOriented);
 
-        // Эксцентриситет = максимальное расстояние от вершины v до всех остальных
         int maxDistance = 0;
 
         for (int u = 0; u < vertexCount; u++) {
+            if (dist[u] == -1) {
+                continue;
+            }
             if (dist[u] > maxDistance) {
                 maxDistance = dist[u];
             }
         }
-
         eccentricities[v] = maxDistance;
     }
 
@@ -67,15 +63,14 @@ std::vector<int> Graph::findEccentricitiesUndirected() const {
 }
 
 //радиус
-int Graph::findRadiusUndirected() const {
-    // Радиус графа — минимальный из эксцентриситетов
-    std::vector<int> eccentricities = findEccentricitiesUndirected();
+int Graph::findRadius(bool useOriented) const {
+    std::vector<int> eccentricities = findEccentricities(useOriented);
 
-    int radius = eccentricities[0];
+    int radius = INF;
 
-    for (int i = 1; i < vertexCount; i++) {
-        if (eccentricities[i] < radius) {
-            radius = eccentricities[i];
+    for (int e : eccentricities) {
+        if (e < radius) {
+            radius = e;
         }
     }
 
@@ -83,15 +78,14 @@ int Graph::findRadiusUndirected() const {
 }
 
 //диаметр
-int Graph::findDiameterUndirected() const {
-    // Диаметр графа — максимальный из эксцентриситетов
-    std::vector<int> eccentricities = findEccentricitiesUndirected();
+int Graph::findDiameter(bool useOriented) const {
+    std::vector<int> eccentricities = findEccentricities(useOriented);
 
-    int diameter = eccentricities[0];
+    int diameter = 0;
 
-    for (int i = 1; i < vertexCount; i++) {
-        if (eccentricities[i] > diameter) {
-            diameter = eccentricities[i];
+    for (int e : eccentricities) {
+        if (e != INF && e > diameter) {
+            diameter = e;
         }
     }
 
@@ -100,56 +94,76 @@ int Graph::findDiameterUndirected() const {
 
 
 //центр
-std::vector<int> Graph::findCenterUndirected() const {
-    // Центр — это вершины, эксцентриситет которых равен радиусу
-    std::vector<int> eccentricities = findEccentricitiesUndirected();
-    int radius = findRadiusUndirected();
+std::vector<int> Graph::findCenter(bool useOriented) const {
+    std::vector<int> eccentricities = findEccentricities(useOriented);
+    int radius = findRadius(useOriented);
 
     std::vector<int> center;
 
     for (int v = 0; v < vertexCount; v++) {
         if (eccentricities[v] == radius) {
-            center.push_back(v+1);
+            center.push_back(v);
         }
     }
-
     return center;
 }
 
 //диаметр вершины
-std::vector<int> Graph::findDiametralVerticesUndirected() const {
-    // Диаметральные вершины — те, чей эксцентриситет равен диаметру
-    std::vector<int> eccentricities = findEccentricitiesUndirected();
-    int diameter = findDiameterUndirected();
+std::vector<int> Graph::findDiametralVertices(bool useOriented) const {
+    std::vector<int> eccentricities = findEccentricities(useOriented);
+    int diameter = findDiameter(useOriented);
 
     std::vector<int> diametralVertices;
 
     for (int v = 0; v < vertexCount; v++) {
         if (eccentricities[v] == diameter) {
-            diametralVertices.push_back(v+1);
+            diametralVertices.push_back(v);
         }
     }
 
     return diametralVertices;
 }
 
-void Graph::printGraphCharacteristicsUndirected() const {
-    std::vector<int> eccentricities = findEccentricitiesUndirected();
-    int radius = findRadiusUndirected();
-    int diameter = findDiameterUndirected();
-    std::vector<int> center = findCenterUndirected();
-    std::vector<int> diametralVertices = findDiametralVerticesUndirected();
+void Graph::printGraphCharacteristics(bool useOriented) const {
+    std::vector<int> eccentricities = findEccentricities(useOriented);
+    int radius = findRadius(useOriented);
+    int diameter = findDiameter(useOriented);
+    std::vector<int> center = findCenter(useOriented);
+    std::vector<int> diametralVertices = findDiametralVertices(useOriented);
+
+    if (useOriented) {
+        std::cout << "\nХарактеристики ориентированного графа:\n";
+    } else {
+        std::cout << "\nХарактеристики неориентированного графа:\n";
+    }
 
     std::cout << "\nЭксцентриситеты вершин:\n";
     for (int v = 0; v < vertexCount; v++) {
-        std::cout << "Вершина " << v+1 << ": " << eccentricities[v] << "\n";
+        std::cout << "Вершина " << v + 1 << ": ";
+        if (eccentricities[v] == INF) {
+            std::cout << "INF";
+        } else {
+            std::cout << eccentricities[v];
+        }
+        std::cout << "\n";
     }
 
-    std::cout << "\nРадиус графа: " << radius << "\n";
+    std::cout << "\nРадиус графа: ";
+    if (radius == INF) {
+        std::cout << "INF\n";
+    } else {
+        std::cout << radius << "\n";
+    }
 
     std::cout << "Центр графа: ";
+    
+    if (center.size() == 1) {
+        std::cout << "вершина ";
+    } else if (center.size() > 1) {
+        std::cout << "вершины ";
+    }
     for (int v : center) {
-        std::cout << v << " ";
+            std::cout << v + 1 << " ";
     }
     std::cout << "\n";
 
@@ -157,7 +171,7 @@ void Graph::printGraphCharacteristicsUndirected() const {
 
     std::cout << "Диаметральные вершины: ";
     for (int v : diametralVertices) {
-        std::cout << v << " ";
+        std::cout << v + 1 << " ";
     }
     std::cout << "\n";
 }

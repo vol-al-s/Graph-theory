@@ -6,6 +6,9 @@
 #include <queue>
 #include "distribution.h"
 
+const int INF = 1000000000;
+
+
 class Matrix {
 private:
     std::vector<std::vector<int>> data; // сама матрица
@@ -24,6 +27,13 @@ public:
 
     void print(const std::string& title) const;
 };
+
+struct BellmanFordResult {
+    std::vector<int> distances;   // вектор кратчайших расстояний от источника
+    std::vector<int> parent;      // массив предков для восстановления пути
+    bool hasNegativeCycle;        // найден ли достижимый отрицательный цикл
+};
+
 
 class Graph {
 private:
@@ -54,14 +64,15 @@ public:
     //--------------------------------------
     //          часть 2
     //--------------------------------------
-    std::vector<int> bfsDistancesUndirected(int start) const;
-    std::vector<int> findEccentricitiesUndirected() const;
-    int findRadiusUndirected() const;
-    int findDiameterUndirected() const;
-    std::vector<int> findCenterUndirected() const;
-    std::vector<int> findDiametralVerticesUndirected() const;
+    std::vector<int> bfsDistances(int start, bool useOriented) const;
 
-    void printGraphCharacteristicsUndirected() const;
+    std::vector<int> findEccentricities(bool useOriented) const;
+    int findRadius(bool useOriented) const;
+    int findDiameter(bool useOriented) const;
+    std::vector<int> findCenter(bool useOriented) const;
+    std::vector<int> findDiametralVertices(bool useOriented) const;
+
+    void printGraphCharacteristics(bool useOriented) const;
     //--------------------------------------
     //          часть 3
     //--------------------------------------
@@ -76,12 +87,25 @@ public:
     Matrix shimbellMax(int edgesCount) const;
 
     void printShimbellResult(int edgesCount, bool findMin, bool findMax) const;
+    int findMaxPathLengthOriented() const;
     //--------------------------------------
     //          часть 4
     //--------------------------------------
     bool routeExistsOriented(int start, int finish) const;
     long long countRoutesOriented(int start, int finish) const;
     void printRouteInfoOriented(int start, int finish) const;
+
+    //--------------------------------------
+    //          лабораторная 2
+    //--------------------------------------
+    void dfsEdgesUtil(bool useOriented, int v, std::vector<bool>& visited, std::vector<std::vector<bool>>& visitedEdges, int& iterations) const;
+
+    void dfsEdges(bool useOriented, int start) const;
+    void printDfsTraversal(bool useOriented, int start) const;
+
+    BellmanFordResult bellmanFord(int start) const;
+    std::vector<int> restoreBellmanFordPath(int start, int finish, const std::vector<int>& parent) const;
+    void printBellmanFordResult(int start, int finish) const;
 
 };
 

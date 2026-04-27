@@ -7,7 +7,7 @@
 #include <iomanip>
 #include <functional>
  
- //--------------------------------------
+    //--------------------------------------
     //          часть 4
     //--------------------------------------
 
@@ -93,11 +93,13 @@ void Graph::printRouteInfoOriented(int start, int finish) const {
         return;
     }
 
+    (*this).printOriented();
+
     bool exists = routeExistsOriented(start, finish);
     long long routesCount = countRoutesOriented(start, finish);
 
-    std::cout << "\nМаршрут из вершины " << start
-              << " в вершину " << finish << ":\n";
+    std::cout << "\nМаршрут из вершины " << start + 1
+              << " в вершину " << finish + 1 << ":\n";
 
     if (exists) {
         std::cout << "Маршрут существует.\n";

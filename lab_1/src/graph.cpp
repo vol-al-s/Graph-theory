@@ -40,14 +40,29 @@ const std::vector<std::vector<int>>& Matrix::getData() const { // возвращ
 void Matrix::print(const std::string& title) const { // Выводим значение матрицы
     int n = size();
 
-    std::cout << "\n" << title << "\n\n";
+    std::cout << "\n" << title << "\n";
+    std::cout << "\n";
+        for (int j = 0; j < (*this).size(); j++) {
+        if (j == 0) {
+            std::cout << std::setw(6) << "| " << std::setw(1) << "v" <<j+1;
+        } else {
+            std::cout << std::setw(2) << "v" <<j+1;
+        }
+    }
+    std::cout<<std::endl;
+    for (int k = 0; k < (6+(*this).size() * (2+1)); k++) {
+        std::cout << "-";
+    }
+    
     std::cout << "\n";
     for (int i = 0; i < n; i++) {
+        std::cout << std::setw(2) << "v" << i+1 << " |";
         for (int j = 0; j < n; j++) {
             std::cout << std::setw(3) << data[i][j];
         }
         std::cout << "\n";
     }
+    std::cout << std::endl;
 }
 
 Graph::Graph() : vertexCount(0) {} // конструктор (изначально число вершин 0)
@@ -185,21 +200,21 @@ std::vector<int> Graph::calculateUndirectedDegrees() const {
 void Graph::printOriented() const {
     orientedMatrix.print("Матрица смежности ориентированного графа:");
 
-    std::vector<int> degrees = calculateOutDegrees();
+    /*std::vector<int> degrees = calculateOutDegrees();
     std::cout << "\nИсходящие степени вершин ориентированного графа:\n";
     for (int i = 0; i < vertexCount; i++) {
         std::cout << "Вершина " << i+1 << ": " << degrees[i] << "\n";
-    }
+    }*/
 }
 
 void Graph::printUndirected() const {
     undirectedMatrix.print("Матрица смежности неориентированного графа:");
 
     std::vector<int> degrees = calculateUndirectedDegrees();
-    std::cout << "\nСтепени вершин неориентированного графа:\n";
+    /*std::cout << "\nСтепени вершин неориентированного графа:\n";
     for (int i = 0; i < vertexCount; i++) {
         std::cout << "Вершина " << i+1 << ": " << degrees[i] << "\n";
-    }
+    }*/
 }
 
 const Matrix& Graph::getOrientedMatrix() const {

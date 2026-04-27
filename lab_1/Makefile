@@ -10,7 +10,7 @@ BIN_DIR = bin
 HEADER_DIR = header
 
 # Исходные и объектные файлы
-SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/graph.cpp $(SRC_DIR)/distribution.cpp $(SRC_DIR)/shimbel.cpp $(SRC_DIR)/road.cpp $(SRC_DIR)/quantities.cpp
+SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/graph.cpp $(SRC_DIR)/distribution.cpp $(SRC_DIR)/shimbel.cpp $(SRC_DIR)/road.cpp $(SRC_DIR)/quantities.cpp $(SRC_DIR)/depth.cpp $(SRC_DIR)/bellmanford.cpp
 OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
 # Исполняемый файл
