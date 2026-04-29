@@ -44,18 +44,13 @@ std::vector<int> PascalDistribution::generateOutDegreeSequence(int n) const {
         return outDegrees;
     }
 
-    // Для последней вершины исходящая степень всегда 0
     outDegrees[n - 1] = 0;
 
     for (int i = 0; i < n - 1; i++) {
         int maxOut = n - i - 1;
 
-        // Генерируем число по Паскалю
         int value = generate();
 
-        // Приводим к допустимому диапазону
-        // Хотим, чтобы вершины 0..n-2 имели хотя бы 1 исходящую дугу,
-        // чтобы можно было гарантированно построить связную цепочку.
         value = value % maxOut;
         value += 1;
 

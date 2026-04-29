@@ -17,9 +17,8 @@ void Graph::dfsEdgesUtil(bool useOriented,
             if (!visitedEdges[v][u]) {
                 std::cout << v + 1 << " -> " << u + 1 << "\n";
 
-                visitedEdges[v][u] = true;
+                visitedEdges[v][u] = true;  
 
-                // Для неориентированного графа ребро считаем тем же самым в обе стороны
                 if (!useOriented) {
                     visitedEdges[u][v] = true;
                 }
@@ -40,7 +39,7 @@ void Graph::dfsEdges(bool useOriented, int start) const {
 
     std::vector<bool> visited(vertexCount, false);
     std::vector<std::vector<bool>> visitedEdges(
-        vertexCount, std::vector<bool>(vertexCount, false)
+    vertexCount, std::vector<bool>(vertexCount, false)
     );
 
     int iterations = 0;
@@ -51,10 +50,9 @@ void Graph::dfsEdges(bool useOriented, int start) const {
         std::cout << "\nОбход рёбер неориентированного графа поиском в глубину:\n";
     }
 
-    // Сначала стартуем из выбранной вершины
     dfsEdgesUtil(useOriented, start, visited, visitedEdges, iterations);
 
-    // Затем, как в образце, добираем оставшиеся вершины
+
     for (int i = start; i < vertexCount; i++) {
         if (!visited[i]) {
             dfsEdgesUtil(useOriented, i, visited, visitedEdges, iterations);

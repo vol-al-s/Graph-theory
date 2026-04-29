@@ -17,11 +17,8 @@ public:
     int getR() const;
     double getP() const;
 
-    // Одно число по распределению Паскаля
     int generate() const;
 
-    // Новый метод:
-    // генерирует вектор исходящих степеней для DAG
     std::vector<int> generateOutDegreeSequence(int n) const;
 };
 

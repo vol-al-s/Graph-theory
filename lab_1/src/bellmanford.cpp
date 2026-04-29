@@ -9,6 +9,7 @@ BellmanFordResult Graph::bellmanFord(int start) const {
     result.distances.assign(vertexCount, BF_INF);
     result.parent.assign(vertexCount, -1);
     result.hasNegativeCycle = false;
+    result.iterations = 0;
 
     if (start < 0 || start >= vertexCount) {
         return result;
@@ -16,14 +17,15 @@ BellmanFordResult Graph::bellmanFord(int start) const {
 
     result.distances[start] = 0;
 
-    // Основные |V|-1 итераций релаксации
     for (int iter = 0; iter < vertexCount - 1; iter++) {
         bool changed = false;
 
         for (int u = 0; u < vertexCount; u++) {
             if (result.distances[u] == BF_INF) {
                 continue;
-            }
+            }   
+            
+            result.iterations++;
 
             for (int v = 0; v < vertexCount; v++) {
                 if (weightMatrix.at(u, v) == INF) {
@@ -40,14 +42,11 @@ BellmanFordResult Graph::bellmanFord(int start) const {
             }
         }
 
-        // Если за итерацию ничего не изменилось,
-        // дальше можно не продолжать
         if (!changed) {
             break;
         }
     }
 
-    // Проверка на достижимый отрицательный цикл
     for (int u = 0; u < vertexCount; u++) {
         if (result.distances[u] == BF_INF) {
             continue;
@@ -57,6 +56,8 @@ BellmanFordResult Graph::bellmanFord(int start) const {
             if (weightMatrix.at(u, v) == INF) {
                 continue;
             }
+
+            result.iterations++;
 
             int w = weightMatrix.at(u, v);
 
@@ -71,7 +72,7 @@ BellmanFordResult Graph::bellmanFord(int start) const {
 }
 
 std::vector<int> Graph::restoreBellmanFordPath(int start, int finish,
-                                               const std::vector<int>& parent) const {
+                const std::vector<int>& parent) const {
     std::vector<int> path;
 
     if (start < 0 || start >= vertexCount || finish < 0 || finish >= vertexCount) {
@@ -115,6 +116,7 @@ void Graph::printBellmanFordResult(int start, int finish) const {
 
     std::cout << "\nРезультат алгоритма Беллмана-Форда\n";
     std::cout << "Источник: " << start + 1 << "\n";
+    std::cout << "Количество итераций: " << result.iterations << "\n";
 
     if (result.hasNegativeCycle) {
         std::cout << "Обнаружен достижимый отрицательный цикл. "

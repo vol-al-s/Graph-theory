@@ -11,6 +11,7 @@
     //          часть 2
     //--------------------------------------
 
+// поиск в глубину 
 std::vector<int> Graph::bfsDistances(int start, bool useOriented) const {
     std::vector<int> dist(vertexCount, -1);
 

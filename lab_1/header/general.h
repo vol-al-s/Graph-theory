@@ -11,7 +11,7 @@ const int INF = 1000000000;
 
 class Matrix {
 private:
-    std::vector<std::vector<int>> data; // сама матрица
+    std::vector<std::vector<int>> data;
 
 public:
     Matrix();
@@ -32,6 +32,7 @@ struct BellmanFordResult {
     std::vector<int> distances;   // вектор кратчайших расстояний от источника
     std::vector<int> parent;      // массив предков для восстановления пути
     bool hasNegativeCycle;        // найден ли достижимый отрицательный цикл
+    long long iterations;
 };
 
 
