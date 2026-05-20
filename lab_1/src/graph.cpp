@@ -65,13 +65,15 @@ void Matrix::print(const std::string& title) const { // Выводим знач�
 Graph::Graph() : vertexCount(0) {} // конструктор (изначально число вершин 0)
 
 //параметризированный конструктор
-Graph::Graph(int n) : vertexCount(n), orientedMatrix(n), undirectedMatrix(n) {}
+Graph::Graph(int n) : vertexCount(n), orientedMatrix(n), undirectedMatrix(n), capacityMatrix(n), costMatrix(n)  {}
 
 void Graph::setVertexCount(int n) { // задаем число вершин
     vertexCount = n;
     orientedMatrix.resize(n); 
     undirectedMatrix.resize(n); 
     weightMatrix.resize(n);
+    capacityMatrix.resize(n);
+    costMatrix.resize(n);
 }
 
 int Graph::getVertexCount() const { // возвращаем количество вершин

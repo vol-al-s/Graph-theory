@@ -1,6 +1,7 @@
 #include "../header/distribution.h"
 #include <cstdlib>
 #include <algorithm>
+#include <cmath>
 
 PascalDistribution::PascalDistribution(int r, double p) : r(r), p(p) {}
 
@@ -37,7 +38,46 @@ int PascalDistribution::generate() const {
     return failures;
 }
 
+
 std::vector<int> PascalDistribution::generateOutDegreeSequence(int n) const {
+    std::vector<int> sampled(n, 0);
+    std::vector<int> outDegrees(n, 0);
+
+    if (n <= 1) {
+        return outDegrees;
+    }
+
+    int sampleMax = 0;
+
+    for (int i = 0; i < n; i++) {
+        sampled[i] = generate();
+        sampleMax = std::max(sampleMax, sampled[i]);
+    }
+
+    double k = 1.0;
+    if (sampleMax > 0) {
+        k = static_cast<double>(n - 1) / sampleMax;
+    }
+
+    for (int i = 0; i < n; i++) {
+        int value = static_cast<int>(std::round(sampled[i] * k));
+
+        /*int maxOut = n - i - 1;
+
+        if (value > maxOut) {
+            value = maxOut;
+        }
+
+        outDegrees[i] = value;
+    }
+
+    outDegrees[n - 1] = 0;*/
+        outDegrees[i] = value;
+    }
+    return outDegrees;
+}
+
+/*std::vector<int> PascalDistribution::generateOutDegreeSequence(int n) const {
     std::vector<int> outDegrees(n, 0);
 
     if (n <= 1) {
@@ -62,4 +102,4 @@ std::vector<int> PascalDistribution::generateOutDegreeSequence(int n) const {
     }
 
     return outDegrees;
-}
+}*/

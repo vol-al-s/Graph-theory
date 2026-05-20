@@ -2,6 +2,7 @@
 #include <ctime>
 #include <cstdlib>
 #include "../header/general.h"
+//#include "../header/flow.h"
 #include "../header/distribution.h"
 
 using namespace std;
@@ -24,9 +25,13 @@ void mainMenu() {
     cout << "6. Показать весовую матрицу\n";
     cout << "7. Выполнить метод Шимбелла\n";
     cout << "8. Проверить существование маршрута и количество маршрутов\n";
-    cout << "----------------- 2 лаба -------------------------------\n";
+    cout << "----------------- 2 лабораторная -------------------------------\n";
     cout << "9. Выполнить обход вершин графа поиском в глубину\n";
     cout << "10. Найти кратчайший путь алгоритмом Беллмана-Форда\n";
+    cout << "----------------- 3 лабораторная -------------------------------\n";
+    cout << "11. Сгенерировать матрицы пропускных способностей и стоимостей\n";
+    cout << "12. Найти максимальный поток (Форд-Фалкерсон)\n";
+    cout << "13. Найти поток заданной величины минимальной стоимости\n";
     cout << "0. Выход\n";
     cout << "Ваш выбор: ";
 }
@@ -212,7 +217,7 @@ void runShimbell(Graph& graph, bool weightMatrixCreated) {
         return;
     }
 
-    if (edgesCount > graph.getVertexCount() - 1) {
+    if (edgesCount > limit /*graph.getVertexCount() - 1*/) {
         cout << "Для ациклического графа длина пути не может быть больше "
              << limit << ".\n";
         return;
@@ -309,7 +314,46 @@ void runBellmanFord(Graph& graph, bool weightMatrixCreated) {
     graph.printBellmanFordResult(start - 1, finish - 1);
 }
 
+void runFlowMatrices(Graph& graph,
+                     const PascalDistribution& distribution,
+                     bool& flowMatricesCreated) {
+    if (graph.getVertexCount() == 0) {
+        cout << "Сначала необходимо сгенерировать граф.\n";
+        return;
+    }
+    graph.generateCapacityAndCostMatrices(distribution);
+    flowMatricesCreated = true;
+    cout << "Матрицы успешно сгенерированы.\n";
+    graph.printCapacityMatrix();
+    graph.printCostMatrix();
+}
+
+void runMaxFlow(Graph& graph, bool flowMatricesCreated) {
+    if (graph.getVertexCount() == 0) {
+        cout << "Сначала необходимо сгенерировать граф.\n";
+        return;
+    }
+    if (!flowMatricesCreated) {
+        cout << "Сначала необходимо сгенерировать матрицы (пункт 11).\n";
+        return;
+    }
+    graph.printMaxFlowResult();
+}
+
+void runMinCostFlow(Graph& graph, bool flowMatricesCreated) {
+    if (graph.getVertexCount() == 0) {
+        cout << "Сначала необходимо сгенерировать граф.\n";
+        return;
+    }
+    if (!flowMatricesCreated) {
+        cout << "Сначала необходимо сгенерировать матрицы (пункт 11).\n";
+        return;
+    }
+    graph.printMinCostFlowResult();
+}
+
 int main() {
+
     srand((unsigned)time(0));
 
     const int r = 3;
@@ -319,8 +363,11 @@ int main() {
     Graph graph;
 
     bool weightMatrixCreated = false;
+    bool flowMatricesCreated = false;
 
     int choice;
+
+    //FlowNetwork flow(graph.getVertexCount());
 
     do {
         clearConsole();
@@ -340,6 +387,7 @@ int main() {
         else if (choice == 2) {
             generateGraph(graph, distribution);
             weightMatrixCreated = false;
+            flowMatricesCreated = false;
         }
         else if (choice == 3) {
             showCurrentGraph(graph);
@@ -364,6 +412,15 @@ int main() {
         }
         else if (choice == 10) {
             runBellmanFord(graph, weightMatrixCreated);
+        }
+        else if (choice == 11) {
+            runFlowMatrices(graph, distribution, flowMatricesCreated);
+        }
+        else if (choice == 12) {
+            runMaxFlow(graph, flowMatricesCreated);
+        }
+        else if (choice == 13) {
+            runMinCostFlow(graph, flowMatricesCreated);
         }
         else if (choice == 0) {
             cout << "Выход из программы.\n";

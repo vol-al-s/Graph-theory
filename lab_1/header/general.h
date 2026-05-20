@@ -42,6 +42,9 @@ private:
     Matrix orientedMatrix; // ориентированный граф
     Matrix undirectedMatrix; // неориентированный граф
     Matrix weightMatrix; // весовая матрица
+// ---- 3 лабораторная -----
+    Matrix capacityMatrix;   // пропускные способности
+    Matrix costMatrix;       // стоимости передачи единицы потока по дуге
 
 public:
     Graph();
@@ -99,7 +102,7 @@ public:
     //--------------------------------------
     //          лабораторная 2
     //--------------------------------------
-    void dfsEdgesUtil(bool useOriented, int v, std::vector<bool>& visited, std::vector<std::vector<bool>>& visitedEdges, int& iterations) const;
+    /*void dfsEdgesUtil(bool useOriented, int v, std::vector<bool>& visited, std::vector<std::vector<bool>>& visitedEdges, int& iterations) const;
 
     void dfsEdges(bool useOriented, int start) const;
     void printDfsTraversal(bool useOriented, int start) const;
@@ -107,7 +110,61 @@ public:
     BellmanFordResult bellmanFord(int start) const;
     std::vector<int> restoreBellmanFordPath(int start, int finish, const std::vector<int>& parent) const;
     void printBellmanFordResult(int start, int finish) const;
+    */
 
+    //--------------------------------------
+    //          лабораторная 2
+    //--------------------------------------
+    // Поиск в глубину по псевдокоду со слайда 19 tg3.pdf
+    // (универсальный обход через структуру T; для DFS T — это стек, LIFO).
+    // Возвращает последовательность пройденных вершин (то, что псевдокод выдаёт через yield).
+    std::vector<int> dfsTraversal(bool useOriented, int start, long long& iterations) const;
+    void printDfsTraversal(bool useOriented, int start) const;
+
+    // Алгоритм Беллмана-Форда (tg5.pdf, слайды 53–59).
+    // Возвращает вектор расстояний, массив предков, флаг отрицательного цикла
+    // и число итераций релаксации (для сравнения с DFS).
+    BellmanFordResult bellmanFord(int start) const;
+    std::vector<int> restoreBellmanFordPath(int start, int finish,
+                                            const std::vector<int>& parent) const;
+    void printBellmanFordResult(int start, int finish) const;
+
+    //--------------------------------------
+    //          лабораторная 3
+    //--------------------------------------
+    // Генерация двух матриц: пропускных способностей и стоимостей.
+    // На месте дуг исходного ориентированного графа ставим случайные
+    // положительные числа, в остальных клетках — 0 (дуги нет).
+    void generateCapacityAndCostMatrices(const PascalDistribution& distribution);
+
+    const Matrix& getCapacityMatrix() const;
+    const Matrix& getCostMatrix() const;
+    void printCapacityMatrix() const;
+    void printCostMatrix() const;
+    void printFlowMatrix(const Matrix& flow, const std::string& title) const;
+
+    // Источник = первая вершина, сток = последняя.
+    int getSource() const;
+    int getSink()   const;
+
+    // Алгоритм Форда-Фалкерсона. Возвращает величину максимального потока
+    // и через out-параметр — матрицу потока F[u][v].
+    int fordFulkersonMaxFlow(Matrix& flowOut, long long& iterations) const;
+
+    // Поиск увеличивающего пути в остаточной сети поиском в ширину.
+    // Возвращает true и заполняет parent[], если путь найден.
+    bool bfsAugmentingPath(const Matrix& capacity, const Matrix& flow,
+                           int s, int t, std::vector<int>& parent,
+                           long long& iterations) const;
+
+    // Поток заданной величины targetValue с минимальной стоимостью.
+    // Возвращает фактически проведённую величину потока (может быть < target,
+    // если сеть не пропускает столько) и стоимость через costOut.
+    int minCostFlow(int targetValue, Matrix& flowOut,
+                    long long& costOut, long long& iterations) const;
+
+    void printMaxFlowResult() const;
+    void printMinCostFlowResult() const;
 };
 
 #endif
