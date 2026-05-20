@@ -25,7 +25,7 @@ void Graph::generateWeightMatrix(const PascalDistribution& distribution, int mod
         for (int j = 0; j < vertexCount; j++) {
             if (orientedMatrix.at(i, j) == 1) {
 
-                int value = distribution.generate() + 1;
+                int value = distribution.generate() + 1 + rand()%15;
 
                 if (mode == 0) {
                     weightMatrix.at(i, j) = value;

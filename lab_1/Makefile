@@ -13,7 +13,9 @@ HEADER_DIR = header
 SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/graph.cpp $(SRC_DIR)/distribution.cpp \
        $(SRC_DIR)/shimbel.cpp $(SRC_DIR)/road.cpp $(SRC_DIR)/quantities.cpp \
        $(SRC_DIR)/depth.cpp $(SRC_DIR)/bellmanford.cpp \
-       $(SRC_DIR)/maxflow.cpp $(SRC_DIR)/mincost.cpp
+       $(SRC_DIR)/maxflow.cpp $(SRC_DIR)/mincost.cpp \
+	   $(SRC_DIR)/kirchhoff.cpp $(SRC_DIR)/kruskal.cpp \
+       $(SRC_DIR)/prufer.cpp $(SRC_DIR)/vertexcover.cpp
 OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
 # Исполняемый файл

@@ -32,6 +32,10 @@ void mainMenu() {
     cout << "11. Сгенерировать матрицы пропускных способностей и стоимостей\n";
     cout << "12. Найти максимальный поток (Форд-Фалкерсон)\n";
     cout << "13. Найти поток заданной величины минимальной стоимости\n";
+    cout << "----------------- 4 лабораторная -------------------------------\n";
+    cout << "14. Найти число остовных деревьев (теорема Кирхгофа)\n";
+    cout << "15. Построить минимальный остов (Краскал) + код Прюфера\n";
+    cout << "16. Найти минимальное вершинное покрытие\n";
     cout << "0. Выход\n";
     cout << "Ваш выбор: ";
 }
@@ -352,6 +356,58 @@ void runMinCostFlow(Graph& graph, bool flowMatricesCreated) {
     graph.printMinCostFlowResult();
 }
 
+void vertexCoverGraphTypeMenu() {
+    cout << "\nНа каком графе искать минимальное вершинное покрытие?\n";
+    cout << "1. На исходном неориентированном графе\n";
+    cout << "2. На минимальном остове (Краскал)\n";
+    cout << "Ваш выбор: ";
+}
+
+void runKirchhoff(Graph& graph) {
+    if (graph.getVertexCount() == 0) {
+        cout << "Сначала необходимо сгенерировать граф.\n";
+        return;
+    }
+    graph.printKirchhoffResult();
+}
+
+void runKruskalPrufer(Graph& graph, bool weightMatrixCreated) {
+    if (graph.getVertexCount() == 0) {
+        cout << "Сначала необходимо сгенерировать граф.\n";
+        return;
+    }
+    if (!weightMatrixCreated) {
+        cout << "Сначала необходимо сгенерировать весовую матрицу.\n";
+        return;
+    }
+    graph.printKruskalResult();
+    graph.printPruferResult();
+}
+
+void runVertexCover(Graph& graph, bool weightMatrixCreated) {
+    if (graph.getVertexCount() == 0) {
+        cout << "Сначала необходимо сгенерировать граф.\n";
+        return;
+    }
+    int choice;
+    vertexCoverGraphTypeMenu();
+    cin >> choice;
+
+    bool useSpanning;
+    if (choice == 1) useSpanning = false;
+    else if (choice == 2) {
+        useSpanning = true;
+        if (!weightMatrixCreated) {
+            cout << "Для остова нужна весовая матрица. Сначала её сгенерируйте.\n";
+            return;
+        }
+    } else {
+        cout << "Некорректный выбор.\n";
+        return;
+    }
+    graph.printVertexCoverResult(useSpanning);
+}
+
 int main() {
 
     srand((unsigned)time(0));
@@ -422,6 +478,9 @@ int main() {
         else if (choice == 13) {
             runMinCostFlow(graph, flowMatricesCreated);
         }
+        else if (choice == 14) { runKirchhoff(graph); }
+        else if (choice == 15) { runKruskalPrufer(graph, weightMatrixCreated); }
+        else if (choice == 16) { runVertexCover(graph, weightMatrixCreated); }
         else if (choice == 0) {
             cout << "Выход из программы.\n";
         }

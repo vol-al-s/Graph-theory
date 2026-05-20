@@ -165,6 +165,40 @@ public:
 
     void printMaxFlowResult() const;
     void printMinCostFlowResult() const;
+    
+    //--------------------------------------
+    //          лабораторная 4
+    //--------------------------------------
+    // Число остовных деревьев через матрицу Кирхгофа (по неориентированному графу).
+    // Возвращает -1, если граф несвязный или вершин меньше 2.
+    long long countSpanningTreesKirchhoff() const;
+    void printKirchhoffResult() const;
+
+    // Минимальный остов алгоритмом Краскала на неориентированном взвешенном графе.
+    // Возвращает список рёбер остова (each edge = {u, v, weight}) и суммарный вес.
+    // Для весов используется существующая weightMatrix.
+    struct MstEdge { int u; int v; int weight; };
+    std::vector<MstEdge> kruskalMST(long long& totalWeight, bool& isConnected) const;
+    void printKruskalResult() const;
+
+    // Код Прюфера для остова. Сохраняем веса вместе с кодом.
+    // Возвращает: codeVertices[i] — i-й символ кода (номера вершин),
+    //             codeWeights[i]  — веса рёбер в порядке удаления.
+    void encodePrufer(const std::vector<MstEdge>& mstEdges,
+                      std::vector<int>& codeVertices,
+                      std::vector<int>& codeWeights) const;
+
+    // Восстановление дерева по коду Прюфера. Возвращает рёбра восстановленного дерева.
+    std::vector<MstEdge> decodePrufer(const std::vector<int>& codeVertices,
+                                      const std::vector<int>& codeWeights) const;
+
+    void printPruferResult() const;
+
+    // Минимальное вершинное покрытие методом полного перебора по битовой маске.
+    // useSpanning: true — работаем на остове из Краскала, false — на исходном
+    // неориентированном графе. Возвращает вершины (0-индексация).
+    std::vector<int> minVertexCover(bool useSpanning) const;
+    void printVertexCoverResult(bool useSpanning) const;
 };
 
 #endif
