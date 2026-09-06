@@ -332,6 +332,79 @@ void runFlowMatrices(Graph& graph,
     graph.printCostMatrix();
 }
 
+bool selectSourceAndSink(const Graph& graph, int& source, int& sink) {
+    std::vector<int> sources = graph.findSources();
+    std::vector<int> sinks   = graph.findSinks();
+
+    if (sources.empty()) {
+        cout << "В сети нет ни одной вершины-истока (без входящих дуг).\n";
+        return false;
+    }
+    if (sinks.empty()) {
+        cout << "В сети нет ни одной вершины-стока (без исходящих дуг).\n";
+        return false;
+    }
+
+    // Истоки
+    cout << "\nДоступные истоки (вершины без входящих дуг): ";
+    for (size_t i = 0; i < sources.size(); i++) {
+        cout << sources[i] + 1;
+        if (i + 1 < sources.size()) cout << ", ";
+    }
+    cout << "\n";
+
+    if (sources.size() == 1) {
+        source = sources[0];
+        cout << "Автоматически выбран единственный исток: вершина "
+             << source + 1 << "\n";
+    } else {
+        cout << "Введите номер истока: ";
+        int chosen;
+        cin >> chosen;
+        chosen -= 1;
+        bool ok = false;
+        for (int s : sources) if (s == chosen) { ok = true; break; }
+        if (!ok) {
+            cout << "Указанная вершина не является истоком.\n";
+            return false;
+        }
+        source = chosen;
+    }
+
+    // Стоки
+    cout << "\nДоступные стоки (вершины без исходящих дуг): ";
+    for (size_t i = 0; i < sinks.size(); i++) {
+        cout << sinks[i] + 1;
+        if (i + 1 < sinks.size()) cout << ", ";
+    }
+    cout << "\n";
+
+    if (sinks.size() == 1) {
+        sink = sinks[0];
+        cout << "Автоматически выбран единственный сток: вершина "
+             << sink + 1 << "\n";
+    } else {
+        cout << "Введите номер стока: ";
+        int chosen;
+        cin >> chosen;
+        chosen -= 1;
+        bool ok = false;
+        for (int s : sinks) if (s == chosen) { ok = true; break; }
+        if (!ok) {
+            cout << "Указанная вершина не является стоком.\n";
+            return false;
+        }
+        sink = chosen;
+    }
+
+    if (source == sink) {
+        cout << "Исток и сток должны различаться.\n";
+        return false;
+    }
+
+    return true;
+}
+
 void runMaxFlow(Graph& graph, bool flowMatricesCreated) {
     if (graph.getVertexCount() == 0) {
         cout << "Сначала необходимо сгенерировать граф.\n";
@@ -341,7 +414,11 @@ void runMaxFlow(Graph& graph, bool flowMatricesCreated) {
         cout << "Сначала необходимо сгенерировать матрицы (пункт 11).\n";
         return;
     }
-    graph.printMaxFlowResult();
+
+    int source, sink;
+    if (!selectSourceAndSink(graph, source, sink)) return;
+
+    graph.printMaxFlowResult(source, sink);
 }
 
 void runMinCostFlow(Graph& graph, bool flowMatricesCreated) {
@@ -353,7 +430,11 @@ void runMinCostFlow(Graph& graph, bool flowMatricesCreated) {
         cout << "Сначала необходимо сгенерировать матрицы (пункт 11).\n";
         return;
     }
-    graph.printMinCostFlowResult();
+
+    int source, sink;
+    if (!selectSourceAndSink(graph, source, sink)) return;
+
+    graph.printMinCostFlowResult(source, sink);
 }
 
 void vertexCoverGraphTypeMenu() {

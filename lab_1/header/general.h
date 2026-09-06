@@ -99,31 +99,15 @@ public:
     long long countRoutesOriented(int start, int finish) const;
     void printRouteInfoOriented(int start, int finish) const;
 
-    //--------------------------------------
-    //          лабораторная 2
-    //--------------------------------------
-    /*void dfsEdgesUtil(bool useOriented, int v, std::vector<bool>& visited, std::vector<std::vector<bool>>& visitedEdges, int& iterations) const;
 
-    void dfsEdges(bool useOriented, int start) const;
-    void printDfsTraversal(bool useOriented, int start) const;
-
-    BellmanFordResult bellmanFord(int start) const;
-    std::vector<int> restoreBellmanFordPath(int start, int finish, const std::vector<int>& parent) const;
-    void printBellmanFordResult(int start, int finish) const;
-    */
 
     //--------------------------------------
     //          лабораторная 2
     //--------------------------------------
-    // Поиск в глубину по псевдокоду со слайда 19 tg3.pdf
-    // (универсальный обход через структуру T; для DFS T — это стек, LIFO).
-    // Возвращает последовательность пройденных вершин (то, что псевдокод выдаёт через yield).
+    
     std::vector<int> dfsTraversal(bool useOriented, int start, long long& iterations) const;
     void printDfsTraversal(bool useOriented, int start) const;
 
-    // Алгоритм Беллмана-Форда (tg5.pdf, слайды 53–59).
-    // Возвращает вектор расстояний, массив предков, флаг отрицательного цикла
-    // и число итераций релаксации (для сравнения с DFS).
     BellmanFordResult bellmanFord(int start) const;
     std::vector<int> restoreBellmanFordPath(int start, int finish,
                                             const std::vector<int>& parent) const;
@@ -132,9 +116,6 @@ public:
     //--------------------------------------
     //          лабораторная 3
     //--------------------------------------
-    // Генерация двух матриц: пропускных способностей и стоимостей.
-    // На месте дуг исходного ориентированного графа ставим случайные
-    // положительные числа, в остальных клетках — 0 (дуги нет).
     void generateCapacityAndCostMatrices(const PascalDistribution& distribution);
 
     const Matrix& getCapacityMatrix() const;
@@ -143,60 +124,50 @@ public:
     void printCostMatrix() const;
     void printFlowMatrix(const Matrix& flow, const std::string& title) const;
 
-    // Источник = первая вершина, сток = последняя.
-    int getSource() const;
-    int getSink()   const;
+    std::vector<int> findSources() const;
+    std::vector<int> findSinks()   const;
 
-    // Алгоритм Форда-Фалкерсона. Возвращает величину максимального потока
-    // и через out-параметр — матрицу потока F[u][v].
-    int fordFulkersonMaxFlow(Matrix& flowOut, long long& iterations) const;
+    struct AugmentingPath {
+        std::vector<int> vertices;
+        int delta;
+    };
 
-    // Поиск увеличивающего пути в остаточной сети поиском в ширину.
-    // Возвращает true и заполняет parent[], если путь найден.
+    int fordFulkersonMaxFlow(int source, int sink,
+                             Matrix& flowOut,
+                             std::vector<AugmentingPath>& augmentingPaths,
+                             long long& iterations) const;
+
     bool bfsAugmentingPath(const Matrix& capacity, const Matrix& flow,
                            int s, int t, std::vector<int>& parent,
                            long long& iterations) const;
 
-    // Поток заданной величины targetValue с минимальной стоимостью.
-    // Возвращает фактически проведённую величину потока (может быть < target,
-    // если сеть не пропускает столько) и стоимость через costOut.
-    int minCostFlow(int targetValue, Matrix& flowOut,
+    int minCostFlow(int source, int sink, int targetValue,
+                    Matrix& flowOut,
                     long long& costOut, long long& iterations) const;
 
-    void printMaxFlowResult() const;
-    void printMinCostFlowResult() const;
-    
+    void printMaxFlowResult(int source, int sink) const;
+    void printMinCostFlowResult(int source, int sink) const;
+
     //--------------------------------------
     //          лабораторная 4
     //--------------------------------------
-    // Число остовных деревьев через матрицу Кирхгофа (по неориентированному графу).
-    // Возвращает -1, если граф несвязный или вершин меньше 2.
     long long countSpanningTreesKirchhoff() const;
     void printKirchhoffResult() const;
 
-    // Минимальный остов алгоритмом Краскала на неориентированном взвешенном графе.
-    // Возвращает список рёбер остова (each edge = {u, v, weight}) и суммарный вес.
-    // Для весов используется существующая weightMatrix.
     struct MstEdge { int u; int v; int weight; };
     std::vector<MstEdge> kruskalMST(long long& totalWeight, bool& isConnected) const;
     void printKruskalResult() const;
 
-    // Код Прюфера для остова. Сохраняем веса вместе с кодом.
-    // Возвращает: codeVertices[i] — i-й символ кода (номера вершин),
-    //             codeWeights[i]  — веса рёбер в порядке удаления.
     void encodePrufer(const std::vector<MstEdge>& mstEdges,
                       std::vector<int>& codeVertices,
                       std::vector<int>& codeWeights) const;
 
-    // Восстановление дерева по коду Прюфера. Возвращает рёбра восстановленного дерева.
+
     std::vector<MstEdge> decodePrufer(const std::vector<int>& codeVertices,
                                       const std::vector<int>& codeWeights) const;
 
     void printPruferResult() const;
 
-    // Минимальное вершинное покрытие методом полного перебора по битовой маске.
-    // useSpanning: true — работаем на остове из Краскала, false — на исходном
-    // неориентированном графе. Возвращает вершины (0-индексация).
     std::vector<int> minVertexCover(bool useSpanning) const;
     void printVertexCoverResult(bool useSpanning) const;
 };
