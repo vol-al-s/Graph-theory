@@ -4,10 +4,13 @@
 #include <vector>
 #include <string>
 #include <queue>
+#include <set>
+#include <utility>
 #include "distribution.h"
 
 const int INF = 1000000000;
-
+// множество рёбер: каждое ребро хранится как пара (меньшая вершина, большая)
+typedef std::set<std::pair<int, int> > EdgeSet;
 
 class Matrix {
 private:
@@ -172,6 +175,30 @@ public:
 
     std::vector<int> minVertexCover(bool useSpanning) const;
     void printVertexCoverResult(bool useSpanning) const;
+
+    //--------------------------------------
+    //          лабораторная 5
+    //--------------------------------------
+
+    // ---- часть 1: эйлеров цикл ----
+    struct EulerEdge { int u; int v; bool used; };
+
+    std::vector<EulerEdge> buildEulerEdges() const;
+    std::vector<int> eulerDegrees(const std::vector<EulerEdge>& edges) const;
+    bool connectedWithout(const std::vector<EulerEdge>& edges, int skipIndex) const;
+    void makeEulerian(std::vector<EulerEdge>& edges) const;
+    std::vector<int> hierholzer(std::vector<EulerEdge>& edges) const;
+    void printEulerResult() const;
+
+    // ---- часть 2: фундаментальная система циклов ----
+    static std::pair<int, int> normalizeEdge(int u, int v);
+    static EdgeSet symmetricDifference(const EdgeSet& a, const EdgeSet& b);
+    static void printEdgeSet(const EdgeSet& edges);
+
+    std::vector<int> pathInTree(const std::vector<MstEdge>& mstEdges,
+                                int src, int dst) const;
+    std::vector<EdgeSet> buildFundamentalCycles(const std::vector<MstEdge>& mstEdges) const;
+    std::vector<EdgeSet> printFundamentalCyclesResult() const;
 };
 
 #endif

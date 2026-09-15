@@ -15,7 +15,8 @@ SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/lab_1/graph.cpp $(SRC_DIR)/lab_1/distribut
        $(SRC_DIR)/lab_2/depth.cpp $(SRC_DIR)/lab_2/bellmanford.cpp \
        $(SRC_DIR)/lab_3/maxflow.cpp $(SRC_DIR)/lab_3/mincost.cpp \
 	   $(SRC_DIR)/lab_4/kirchhoff.cpp $(SRC_DIR)/lab_4/kruskal.cpp \
-       $(SRC_DIR)/lab_4/prufer.cpp $(SRC_DIR)/lab_4/vertexcover.cpp
+       $(SRC_DIR)/lab_4/prufer.cpp $(SRC_DIR)/lab_4/vertexcover.cpp \
+	   $(SRC_DIR)/lab_5/euler.cpp $(SRC_DIR)/lab_5/cycles.cpp
 OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
 # Исполняемый файл

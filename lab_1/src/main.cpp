@@ -36,6 +36,9 @@ void mainMenu() {
     cout << "14. Найти число остовных деревьев (теорема Кирхгофа)\n";
     cout << "15. Построить минимальный остов (Краскал) + код Прюфера\n";
     cout << "16. Найти минимальное вершинное покрытие\n";
+    cout << "----------------- 5 лабораторная -------------------------------\n";
+    cout << "17. Проверить эйлеровость и построить эйлеров цикл\n";
+    cout << "18. Фундаментальная система циклов + симметрическая разность\n";
     cout << "0. Выход\n";
     cout << "Ваш выбор: ";
 }
@@ -489,6 +492,69 @@ void runVertexCover(Graph& graph, bool weightMatrixCreated) {
     graph.printVertexCoverResult(useSpanning);
 }
 
+void runEuler(Graph& graph) {
+    if (graph.getVertexCount() == 0) {
+        cout << "Сначала необходимо сгенерировать граф.\n";
+        return;
+    }
+    graph.printEulerResult();
+}
+
+void runFundamentalCycles(Graph& graph, bool weightMatrixCreated) {
+    if (graph.getVertexCount() == 0) {
+        cout << "Сначала необходимо сгенерировать граф.\n";
+        return;
+    }
+    if (!weightMatrixCreated) {
+        cout << "Сначала необходимо сгенерировать весовую матрицу.\n";
+        return;
+    }
+
+    vector<EdgeSet> cycles = graph.printFundamentalCyclesResult();
+    if (cycles.empty()) return;
+
+    cout << "\nСимметрическая разность циклов.\n";
+    cout << "Вводите номера циклов (1.." << cycles.size()
+         << ") по одному, 0 — завершить ввод.\n";
+
+    EdgeSet result;
+    bool started = false;
+
+    while (true) {
+        cout << "  Номер цикла: ";
+        int index;
+        cin >> index;
+
+        if (index == 0) break;
+
+        if (index < 1 || index > (int)cycles.size()) {
+            cout << "  Неверный номер (1.." << cycles.size() << ").\n";
+            continue;
+        }
+
+        if (!started) {
+            result = cycles[index - 1];
+            started = true;
+        } else {
+            result = Graph::symmetricDifference(result, cycles[index - 1]);
+        }
+
+        cout << "  Текущий результат: ";
+        Graph::printEdgeSet(result);
+        cout << "\n";
+    }
+
+    if (!started) {
+        cout << "Ни одного цикла не выбрано.\n";
+        return;
+    }
+
+    cout << "\nИтоговое множество рёбер: ";
+    Graph::printEdgeSet(result);
+    if (result.empty()) cout << "  (пусто)";
+    cout << "\n";
+}
+
 int main() {
 
     srand((unsigned)time(0));
@@ -562,6 +628,8 @@ int main() {
         else if (choice == 14) { runKirchhoff(graph); }
         else if (choice == 15) { runKruskalPrufer(graph, weightMatrixCreated); }
         else if (choice == 16) { runVertexCover(graph, weightMatrixCreated); }
+        else if (choice == 17) { runEuler(graph); }
+        else if (choice == 18) { runFundamentalCycles(graph, weightMatrixCreated); }
         else if (choice == 0) {
             cout << "Выход из программы.\n";
         }
