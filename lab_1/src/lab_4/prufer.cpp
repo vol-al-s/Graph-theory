@@ -7,7 +7,8 @@
 
 void Graph::encodePrufer(const std::vector<MstEdge>& mstEdges,
                          std::vector<int>& codeVertices,
-                         std::vector<int>& codeWeights) const {
+                         std::vector<int>& codeWeights,
+                         MstEdge& lastEdge) const {
     codeVertices.clear();
     codeWeights.clear();
 
@@ -27,7 +28,7 @@ void Graph::encodePrufer(const std::vector<MstEdge>& mstEdges,
 
     std::vector<bool> removed(n, false);
 
-    for (int step = 0; step < n - 1; step++) {
+    for (int step = 0; step < n - 2; step++) {
         int leaf = -1;
         for (int v = 0; v < n; v++) {
             if (!removed[v] && deg[v] == 1) { leaf = v; break; }
@@ -47,16 +48,31 @@ void Graph::encodePrufer(const std::vector<MstEdge>& mstEdges,
         deg[neighbor]--;
         deg[leaf] = 0;
     }
+
+    // Две оставшиеся непомеченные вершины образуют последнее ребро,
+    // которое в код Прюфера не входит по определению.
+    int a = -1, b = -1;
+    for (int v = 0; v < n; v++) {
+        if (!removed[v]) {
+            if (a == -1) a = v; else b = v;
+        }
+    }
+    int lastWeight = 0;
+    for (const auto& pr : adj[a]) {
+        if (pr.first == b) { lastWeight = pr.second; break; }
+    }
+    lastEdge = {std::min(a, b), std::max(a, b), lastWeight};
 }
 
 std::vector<Graph::MstEdge> Graph::decodePrufer(
     const std::vector<int>& codeVertices,
-    const std::vector<int>& codeWeights) const {
+    const std::vector<int>& codeWeights,
+    const MstEdge& lastEdge) const {
 
     std::vector<MstEdge> result;
     if (vertexCount <= 1) return result;
     if (codeVertices.size() != codeWeights.size()) return result;
-    if ((int)codeVertices.size() != vertexCount - 1) return result;
+    if ((int)codeVertices.size() != vertexCount - 2) return result;
 
     int n = vertexCount;
     int p1 = (int)codeVertices.size();
@@ -84,6 +100,7 @@ std::vector<Graph::MstEdge> Graph::decodePrufer(
         count[neighbor]--;
     }
 
+    result.push_back(lastEdge);
     return result;
 }
 
@@ -114,7 +131,8 @@ void Graph::printPruferResult() const {
 
     // Кодирование
     std::vector<int> codeV, codeW;
-    encodePrufer(mst, codeV, codeW);
+    MstEdge lastEdge;
+    encodePrufer(mst, codeV, codeW, lastEdge);
 
     std::cout << "\nКод Прюфера (вершины): ";
     for (size_t i = 0; i < codeV.size(); i++) {
@@ -129,7 +147,7 @@ void Graph::printPruferResult() const {
     std::cout << "\n";
 
     // Декодирование
-    std::vector<MstEdge> restored = decodePrufer(codeV, codeW);
+    std::vector<MstEdge> restored = decodePrufer(codeV, codeW, lastEdge);;
 
     std::cout << "\nДерево, восстановленное из кода Прюфера:\n";
     for (const MstEdge& e : restored) {

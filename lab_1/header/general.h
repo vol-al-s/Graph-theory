@@ -160,11 +160,13 @@ public:
 
     void encodePrufer(const std::vector<MstEdge>& mstEdges,
                       std::vector<int>& codeVertices,
-                      std::vector<int>& codeWeights) const;
+                      std::vector<int>& codeWeights,
+                      MstEdge& lastEdge) const;
 
 
     std::vector<MstEdge> decodePrufer(const std::vector<int>& codeVertices,
-                                      const std::vector<int>& codeWeights) const;
+                                      const std::vector<int>& codeWeights,
+                                      const MstEdge& lastEdge) const;
 
     void printPruferResult() const;
 

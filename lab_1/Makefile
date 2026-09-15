@@ -10,12 +10,12 @@ BIN_DIR = bin
 HEADER_DIR = header
 
 # Исходные и объектные файлы
-SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/graph.cpp $(SRC_DIR)/distribution.cpp \
-       $(SRC_DIR)/shimbel.cpp $(SRC_DIR)/road.cpp $(SRC_DIR)/quantities.cpp \
-       $(SRC_DIR)/depth.cpp $(SRC_DIR)/bellmanford.cpp \
-       $(SRC_DIR)/maxflow.cpp $(SRC_DIR)/mincost.cpp \
-	   $(SRC_DIR)/kirchhoff.cpp $(SRC_DIR)/kruskal.cpp \
-       $(SRC_DIR)/prufer.cpp $(SRC_DIR)/vertexcover.cpp
+SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/lab_1/graph.cpp $(SRC_DIR)/lab_1/distribution.cpp \
+       $(SRC_DIR)/lab_1/shimbel.cpp $(SRC_DIR)/lab_1/road.cpp $(SRC_DIR)/lab_1/quantities.cpp \
+       $(SRC_DIR)/lab_2/depth.cpp $(SRC_DIR)/lab_2/bellmanford.cpp \
+       $(SRC_DIR)/lab_3/maxflow.cpp $(SRC_DIR)/lab_3/mincost.cpp \
+	   $(SRC_DIR)/lab_4/kirchhoff.cpp $(SRC_DIR)/lab_4/kruskal.cpp \
+       $(SRC_DIR)/lab_4/prufer.cpp $(SRC_DIR)/lab_4/vertexcover.cpp
 OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
 # Исполняемый файл
@@ -33,7 +33,9 @@ $(EXEC): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
 
 # Компиляция .cpp файлов из src/ в .o файлы в папке obj/
+# Компиляция .cpp файлов из src/ в .o файлы в папке obj/
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # === БЫСТРЫЙ ЗАПУСК ===

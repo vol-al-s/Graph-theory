@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <cstdlib>
 
 
 std::vector<int> Graph::minVertexCover(bool useSpanning) const {
@@ -28,30 +29,44 @@ std::vector<int> Graph::minVertexCover(bool useSpanning) const {
     int m = (int)edges.size();
     if (m == 0) return answer;
 
-    if (n == 2) {
-        answer.push_back(0);
-        return answer;
-    }
+std::vector<bool> edgeRemoved(m, false); // ребро уже покрыто и выброшено из графа
+    std::vector<bool> inCover(n, false);     // вершина уже попала в решение S
 
-    for (int size = 1; size <= n; size++) {
-        for (int mask = 0; mask < (1 << n); mask++) {
-            int bits = __builtin_popcount((unsigned)mask);
-            if (bits != size) continue;
+    while (true) {
+        // 1) собираем номера рёбер, которые ещё не покрыты
+        std::vector<int> alive;
+        for (int i = 0; i < m; i++) {
+            if (!edgeRemoved[i]) alive.push_back(i);
+        }
 
-            bool covers = true;
-            for (const auto& e : edges) {
-                bool u_in = (mask >> e.first)  & 1;
-                bool v_in = (mask >> e.second) & 1;
-                if (!u_in && !v_in) { covers = false; break; }
-            }
-            if (covers) {
-                for (int v = 0; v < n; v++) {
-                    if ((mask >> v) & 1) answer.push_back(v);
-                }
-                return answer;
+        // если непокрытых рёбер не осталось — алгоритм закончил работу
+        if (alive.empty()) break;
+
+        // 2) выбираем среди них одно случайное ребро e = (u, v)
+        int idx = alive[rand() % (int)alive.size()];
+        int u = edges[idx].first;
+        int v = edges[idx].second;
+
+        // 3) добавляем в решение S обе вершины ребра
+        inCover[u] = true;
+        inCover[v] = true;
+
+        // 4) удаляем из графа все рёбра, инцидентные u или v
+        for (int i = 0; i < m; i++) {
+            if (edgeRemoved[i]) continue;
+            int a = edges[i].first;
+            int b = edges[i].second;
+            if (a == u || a == v || b == u || b == v) {
+                edgeRemoved[i] = true;
             }
         }
     }
+
+    // 5) переводим отметки в список номеров вершин (сразу по возрастанию)
+    for (int v = 0; v < n; v++) {
+        if (inCover[v]) answer.push_back(v);
+    }
+
     return answer;
 }
 
@@ -102,7 +117,6 @@ void Graph::printVertexCoverResult(bool useSpanning) const {
 
     if (vertexCount == 2) {
         std::cout << "\n(краевой случай: для графа из 2 вершин с одним ребром "
-                     "минимальное покрытие — одна вершина; "
-                     "число остовных деревьев = 1 — это K2)\n";
+                     "минимальное покрытие — одна вершина.";
     }
 }
