@@ -18,51 +18,45 @@ BellmanFordResult Graph::bellmanFord(int start) const {
 
     result.distances[start] = 0;
 
-    const int PHASE_MARKER = -1;
-
     std::deque<int> queue;
-    std::vector<bool> inQueue(vertexCount, false);
+    std::vector<bool> wasInQueue(vertexCount, false);
+    std::vector<int>  count(vertexCount, 0);
 
     queue.push_back(start);
-    inQueue[start] = true;
-    queue.push_back(PHASE_MARKER);
-
-    int phasesCompleted = 0;
+    wasInQueue[start] = true;
+    count[start] = 1;
 
     while (!queue.empty()) {
         int u = queue.front();
         queue.pop_front();
 
-        if (u == PHASE_MARKER) {
-            phasesCompleted++;
-
-            if (queue.empty()) break;
-
-            if (phasesCompleted >= vertexCount - 1) {
-                result.hasNegativeCycle = true;
-                break;
-            }
-
-            queue.push_back(PHASE_MARKER);
-            continue;
-        }
-
-        inQueue[u] = false;
-
-
         for (int v = 0; v < vertexCount; v++) {
             int w = weightMatrix.at(u, v);
-            if (w == INF) continue;  
+            if (w == INF) continue;
 
-            result.iterations++; 
+            result.iterations++;
 
             if (result.distances[u] + w < result.distances[v]) {
                 result.distances[v] = result.distances[u] + w;
                 result.parent[v]    = u;
 
-                if (!inQueue[v]) {
+                if (!wasInQueue[v]) {
                     queue.push_back(v);
-                    inQueue[v] = true;
+                    wasInQueue[v] = true;
+                    count[v]++;
+
+                    if (count[v] >= vertexCount) {
+                        result.hasNegativeCycle = true;
+                        return result;
+                    }
+                } else {
+                    queue.push_front(v);
+                    count[v]++;
+
+                    if (count[v] >= vertexCount) {
+                        result.hasNegativeCycle = true;
+                        return result;
+                    }
                 }
             }
         }
